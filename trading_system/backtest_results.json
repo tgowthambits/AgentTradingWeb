@@ -1,0 +1,271 @@
+{
+  "summary": {
+    "initial_capital": 200000.0,
+    "final_capital": 199709.6565,
+    "total_pnl": -290.3434999999936,
+    "returns_pct": -0.1451717499999968
+  },
+  "metrics": [
+    {
+      "is_category": true,
+      "category": "\ud83d\udcb0 CAPITAL & RETURNS"
+    },
+    {
+      "category": "",
+      "metric": "Initial Capital",
+      "value": "\u20b9200,000.00"
+    },
+    {
+      "category": "",
+      "metric": "Final Capital",
+      "value": "\u20b9199,709.66",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Total PnL",
+      "value": "\u20b9-290.34",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Return %",
+      "value": "-0.15%",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Total Charges",
+      "value": "\u20b90.00",
+      "is_positive": null
+    },
+    {
+      "category": "",
+      "metric": "Gross PnL",
+      "value": "\u20b9-290.34",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Net Profit (After Charges)",
+      "value": "\u20b9-290.34",
+      "is_positive": false
+    },
+    {
+      "is_category": true,
+      "category": "\ud83d\udcc8 TRADING ACTIVITY"
+    },
+    {
+      "category": "",
+      "metric": "Total Trades (Real)",
+      "value": "7"
+    },
+    {
+      "category": "",
+      "metric": "Winning Trades",
+      "value": "2",
+      "is_positive": true
+    },
+    {
+      "category": "",
+      "metric": "Losing Trades",
+      "value": "5",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Win Rate",
+      "value": "28.57%",
+      "is_positive": false
+    },
+    {
+      "is_category": true,
+      "category": "\ud83d\udcb5 PROFIT & LOSS"
+    },
+    {
+      "category": "",
+      "metric": "Average Win",
+      "value": "\u20b9+4,854.83",
+      "is_positive": true
+    },
+    {
+      "category": "",
+      "metric": "Average Loss",
+      "value": "\u20b9-2,000.00",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Largest Win",
+      "value": "\u20b9+5,962.38",
+      "is_positive": true
+    },
+    {
+      "category": "",
+      "metric": "Largest Loss",
+      "value": "\u20b9-2,000.00",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Profit Factor",
+      "value": "0.97",
+      "is_positive": false
+    },
+    {
+      "category": "",
+      "metric": "Expectancy per Trade",
+      "value": "\u20b9-41.48",
+      "is_positive": false
+    }
+  ],
+  "trades": [
+    {
+      "order_id": 1,
+      "symbol": "BSE:SENSEX2642378000PE",
+      "type": "LONG",
+      "entry_price": 665.682675,
+      "exit_price": 655.9718499999999,
+      "quantity": 240,
+      "pnl": -2000.000000000009,
+      "max_unrealized_profit": 868.1579999999849,
+      "min_unrealized_profit": -2251.842000000015,
+      "return_pct": -1.4587768864497057,
+      "mode": "REAL",
+      "duration": "00:00:25",
+      "total_charges": 368.804141847924,
+      "net_profit": -2368.804141847933,
+      "entry_reason": "BUY (2B/0S/3H, 60%)",
+      "exit_reason": "Hard stop loss hit"
+    },
+    {
+      "order_id": 2,
+      "symbol": "BSE:SENSEX2642379400CE",
+      "type": "LONG",
+      "entry_price": 257.72880000000004,
+      "exit_price": 267.66610000000003,
+      "quantity": 600,
+      "pnl": 5962.379999999996,
+      "max_unrealized_profit": 6042.719999999986,
+      "min_unrealized_profit": -1037.2800000000211,
+      "return_pct": 3.8557196557000974,
+      "mode": "REAL",
+      "duration": "00:01:25",
+      "total_charges": 368.59472968596003,
+      "net_profit": 5593.785270314035,
+      "entry_reason": "BUY (2B/0S/3H, 60%)",
+      "exit_reason": "Profit Target 1 hit (exit_on_first_target_hit)"
+    },
+    {
+      "order_id": 3,
+      "symbol": "BSE:SENSEX2642379400CE",
+      "type": "LONG",
+      "entry_price": 268.78432499999997,
+      "exit_price": 264.817525,
+      "quantity": 580,
+      "pnl": -1999.9999999999932,
+      "max_unrealized_profit": 0.0,
+      "min_unrealized_profit": -2223.9084999999877,
+      "return_pct": -1.4758301102566076,
+      "mode": "REAL",
+      "duration": "00:00:15",
+      "total_charges": 359.835362136982,
+      "net_profit": -2359.835362136975,
+      "entry_reason": "BUY (2B/0S/3H, 60%)",
+      "exit_reason": "Hard stop loss hit"
+    },
+    {
+      "order_id": 4,
+      "symbol": "BSE:SENSEX2642379400CE",
+      "type": "LONG",
+      "entry_price": 253.42665000000002,
+      "exit_price": 249.77505,
+      "quantity": 620,
+      "pnl": -1999.999999999996,
+      "max_unrealized_profit": 4850.476999999985,
+      "min_unrealized_profit": -2186.523000000011,
+      "return_pct": -1.4408902931084913,
+      "mode": "REAL",
+      "duration": "00:02:05",
+      "total_charges": 362.75120487483593,
+      "net_profit": -2362.7512048748317,
+      "entry_reason": "BUY (2B/0S/3H, 60%)",
+      "exit_reason": "Hard stop loss hit"
+    },
+    {
+      "order_id": 5,
+      "symbol": "BSE:SENSEX2642378000PE",
+      "type": "LONG",
+      "entry_price": 708.4040249999999,
+      "exit_price": 725.4371,
+      "quantity": 220,
+      "pnl": 3747.2765000000118,
+      "max_unrealized_profit": 3827.1145000000047,
+      "min_unrealized_profit": -748.8854999999853,
+      "return_pct": 2.404429449705633,
+      "mode": "REAL",
+      "duration": "00:01:00",
+      "total_charges": 368.283302070365,
+      "net_profit": 3378.9931979296466,
+      "entry_reason": "BUY (2B/0S/3H, 60%)",
+      "exit_reason": "Profit Target 1 hit (exit_on_first_target_hit)"
+    },
+    {
+      "order_id": 6,
+      "symbol": "BSE:SENSEX2642378000PE",
+      "type": "LONG",
+      "entry_price": 706.9533,
+      "exit_price": 694.1027750000001,
+      "quantity": 220,
+      "pnl": -2000.0000000000068,
+      "max_unrealized_profit": 3090.273999999997,
+      "min_unrealized_profit": -2750.725999999993,
+      "return_pct": -1.817733222265169,
+      "mode": "REAL",
+      "duration": "00:01:55",
+      "total_charges": 358.240256878691,
+      "net_profit": -2358.240256878698,
+      "entry_reason": "BUY (2B/0S/3H, 60%)",
+      "exit_reason": "Hard stop loss hit"
+    },
+    {
+      "order_id": 7,
+      "symbol": "BSE:SENSEX2642379400CE",
+      "type": "LONG",
+      "entry_price": 253.67677500000002,
+      "exit_price": 249.125375,
+      "quantity": 620,
+      "pnl": -1999.999999999996,
+      "max_unrealized_profit": 0.0,
+      "min_unrealized_profit": -2744.6005000000127,
+      "return_pct": -1.794172919456276,
+      "mode": "REAL",
+      "duration": "00:00:15",
+      "total_charges": 362.323256347822,
+      "net_profit": -2362.3232563478177,
+      "entry_reason": "BUY (2B/0S/3H, 60%)",
+      "exit_reason": "Hard stop loss hit"
+    }
+  ],
+  "circuit_breaker": null,
+  "config": {
+    "symbols": "BSE:SENSEX2642378000PE, BSE:SENSEX2642379400CE",
+    "initial_capital": 200000,
+    "risk_per_trade": "2.0%",
+    "stop_loss_method": "fixed_amount",
+    "max_loss_per_trade": 2000,
+    "circuit_breaker_enabled": true,
+    "circuit_breaker_trigger": 5,
+    "fixed_quantity": 25
+  },
+  "timeline": {
+    "start_date": "2026-04-17",
+    "end_date": "2026-04-18",
+    "duration": "N/A",
+    "total_iterations": 7,
+    "backtest_started": "2026-04-18 21:56:34",
+    "backtest_completed": "2026-04-18 21:56:34",
+    "execution_time": "N/A"
+  },
+  "generated_at": "2026-04-18T21:56:34.640369"
+}

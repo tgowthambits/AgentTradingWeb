@@ -1,0 +1,31 @@
+# Multi-Symbol Trading Configuration
+# ===================================
+
+# List of symbols to analyze
+symbols:
+  - "BSE:SENSEX2610185100PE"
+  - "BSE:SENSEX2610185100CE"
+  - "NSE:NIFTY25DEC26050PE"
+  - "NSE:NIFTY25DEC26050CE"
+  # Add more symbols below:
+  # - "BSE:SENSEX25DEC85400PE"
+  # - "NSE:NIFTY50-INDEX"
+
+# Date range for analysis
+date_range:
+  start_date: "2025-12-27 16:15:00"
+  end_date: "2025-12-29 16:15:00"
+
+# Output configuration
+output:
+  results_csv: "results/multi_symbol_intraday_results.csv"
+  
+# Position tracking (set to true if you have open positions)
+has_position: false
+
+# Performance settings
+performance:
+  params_config: "configs/params_fast.yaml"  # Use fast params for multi-symbol
+  # params_config: "configs/params.yaml"     # Use full params for single symbol
+  max_intraday_rows: 1000  # Limit intraday data to prevent CPU overload
+

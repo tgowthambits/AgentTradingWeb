@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Backtest #{{ run.pk }} - Trading Platform{% endblock %}
+
+{% block main_width %}max-w-none{% endblock %}
+
+{% block content %}
+<div id="bt-detail-root" class="flex flex-col gap-6"
+     data-run-id="{{ run.pk }}"
+     data-status="{{ run.status }}">
+
+  <div class="flex items-center gap-3 flex-wrap">
+    <a href="{% url 'backtest_results' %}" class="btn btn-ghost btn-sm btn-square">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 class="text-lg font-semibold">Backtest #{{ run.pk }}</h1>
+    <span id="bt-status-badge" class="badge badge-ghost badge-sm">{{ run.status }}</span>
+    <span id="bt-duration" class="text-xs opacity-50">
+      {% if run.duration %}Duration: {{ run.duration }}{% endif %}
+    </span>
+    <div class="grow"></div>
+    <div id="bt-controls" class="flex gap-2 hidden">
+      <button type="button" id="btn-pause" class="btn btn-ghost btn-xs">Pause</button>
+      <button type="button" id="btn-resume" class="btn btn-ghost btn-xs hidden">Resume</button>
+      <button type="button" id="btn-stop" class="btn btn-error btn-xs">Stop</button>
+    </div>
+  </div>
+
+  <div id="bt-error" class="alert alert-error {% if not run.error_message %}hidden{% endif %}" role="alert">
+    <span id="bt-error-text">{{ run.error_message|default:"" }}</span>
+  </div>
+
+  <div id="bt-progress-panel" class="bg-base-200 border border-base-300 rounded-lg p-4 hidden">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm font-medium">Progress</span>
+      <span id="bt-progress-msg" class="text-xs opacity-60"></span>
+    </div>
+    <progress id="bt-progress-bar" class="progress progress-primary w-full" value="0" max="100"></progress>
+    <div class="flex items-center justify-between mt-1 text-xs opacity-60">
+      <span id="bt-progress-pct">0%</span>
+      <span id="bt-progress-bars">0 / 0 bars</span>
+    </div>
+  </div>
+
+  <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-medium">Run Info</span>
+      <span id="bt-bar-time" class="text-xs opacity-60 font-mono"></span>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-sm">
+      <div>
+        <div class="text-xs opacity-50">Start</div>
+        <div class="font-mono text-xs">{{ run.start_date }}</div>
+      </div>
+      <div>
+        <div class="text-xs opacity-50">End</div>
+        <div class="font-mono text-xs">{{ run.end_date }}</div>
+      </div>
+      <div>
+        <div class="text-xs opacity-50">Resolution</div>
+        <div class="font-mono">{{ run.resolution }}</div>
+      </div>
+      <div>
+        <div class="text-xs opacity-50">Total Bars</div>
+        <div id="bt-total-bars" class="font-mono">{{ run.total_bars }}</div>
+      </div>
+      <div>
+        <div class="text-xs opacity-50">Created</div>
+        <div class="text-xs">{{ run.created_at|date:"M d, Y H:i" }}</div>
+      </div>
+      <div>
+        <div class="text-xs opacity-50">Iteration</div>
+        <div id="bt-iteration" class="font-mono">--</div>
+      </div>
+    </div>
+
+    <div class="mt-3 pt-3 border-t border-base-300">
+      <div class="text-xs opacity-50 mb-2">Symbols</div>
+      <div id="bt-symbol-ticks" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+        {% for sym in run.symbols %}
+        <div class="flex items-center justify-between gap-3 px-3 py-2 bg-base-300 rounded" data-symbol="{{ sym }}">
+          <div class="font-mono text-xs break-all">{{ sym }}</div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-xs opacity-50" data-field="time">--</span>
+            <span class="font-mono text-sm" data-field="price">--</span>
+            <span class="badge badge-ghost badge-xs" data-field="signal">HOLD</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {{ run.symbols|json_script:"bt-symbols-data" }}
+
+  <div class="bg-base-200 border border-base-300 rounded-lg">
+    <div class="flex items-center justify-between p-3 border-b border-base-300 flex-wrap gap-2">
+      <span class="text-sm font-medium">Charts</span>
+      <div id="bt-layout-picker"></div>
+    </div>
+    <div id="bt-chart-grid" class="p-2 gap-2" style="display: grid;"></div>
+  </div>
+
+  <div class="bg-base-200 border border-base-300 rounded-lg">
+    <div class="p-4 border-b border-base-300">
+      <span class="text-sm font-medium">Open Positions (<span id="bt-open-count">0</span>)</span>
+    </div>
+    <div class="overflow-x-auto max-h-[360px]">
+      <table class="table table-xs w-full">
+        <thead class="sticky top-0 bg-base-200">
+          <tr>
+            <th>Symbol</th>
+            <th>Type</th>
+            <th>Entry Time</th>
+            <th>Entry</th>
+            <th>LTP</th>
+            <th>Qty</th>
+            <th>Unrealized</th>
+            <th>%</th>
+          </tr>
+        </thead>
+        <tbody id="bt-open-body">
+          <tr><td colspan="8" class="text-center py-6 opacity-30">None</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Initial Capital</div>
+      <div id="bt-initial-capital" class="text-xl font-mono font-semibold">
+        {% if run.summary_json %}{{ run.summary_json.initial_capital }}{% else %}--{% endif %}
+      </div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Final Capital</div>
+      <div id="bt-final-capital" class="text-xl font-mono font-semibold">
+        {% if run.summary_json %}{{ run.summary_json.final_capital }}{% else %}--{% endif %}
+      </div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Total PnL</div>
+      <div id="bt-total-pnl" class="text-xl font-mono font-semibold">
+        {% if run.summary_json %}{{ run.summary_json.total_pnl }}{% else %}--{% endif %}
+      </div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Return %</div>
+      <div id="bt-return-pct" class="text-xl font-mono font-semibold">
+        {% if run.summary_json %}{{ run.summary_json.returns_pct }}%{% else %}--{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Total Trades</div>
+      <div id="bt-m-total-trades" class="font-mono font-semibold">{% if run.metrics_json %}{{ run.metrics_json.total_trades }}{% else %}0{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Win Rate</div>
+      <div id="bt-m-win-rate" class="font-mono font-semibold">{% if run.metrics_json %}{{ run.metrics_json.win_rate }}%{% else %}--{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Profit Factor</div>
+      <div id="bt-m-pf" class="font-mono font-semibold">{% if run.metrics_json %}{{ run.metrics_json.profit_factor }}{% else %}--{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Avg Win</div>
+      <div id="bt-m-avg-win" class="font-mono pnl-positive">{% if run.metrics_json %}{{ run.metrics_json.avg_win }}{% else %}--{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Avg Loss</div>
+      <div id="bt-m-avg-loss" class="font-mono pnl-negative">{% if run.metrics_json %}{{ run.metrics_json.avg_loss }}{% else %}--{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Max Win</div>
+      <div id="bt-m-max-win" class="font-mono pnl-positive">{% if run.metrics_json %}{{ run.metrics_json.max_win }}{% else %}--{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Max Loss</div>
+      <div id="bt-m-max-loss" class="font-mono pnl-negative">{% if run.metrics_json %}{{ run.metrics_json.max_loss }}{% else %}--{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Expectancy</div>
+      <div id="bt-m-expectancy" class="font-mono">{% if run.metrics_json %}{{ run.metrics_json.expectancy }}{% else %}--{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Winning</div>
+      <div id="bt-m-wins" class="font-mono pnl-positive">{% if run.metrics_json %}{{ run.metrics_json.winning_trades }}{% else %}0{% endif %}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-3">
+      <div class="text-xs opacity-50">Losing</div>
+      <div id="bt-m-losses" class="font-mono pnl-negative">{% if run.metrics_json %}{{ run.metrics_json.losing_trades }}{% else %}0{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="bg-base-200 border border-base-300 rounded-lg">
+    <div class="flex items-center justify-between p-4 border-b border-base-300">
+      <span class="text-sm font-medium">Trades (<span id="bt-trade-count">{{ trades.count }}</span>)</span>
+    </div>
+    <div class="overflow-x-auto max-h-[520px]">
+      <table class="table table-xs w-full">
+        <thead class="sticky top-0 bg-base-200">
+          <tr>
+            <th>#</th>
+            <th>Symbol</th>
+            <th>Type</th>
+            <th>Entry Time</th>
+            <th>Entry</th>
+            <th>Exit Time</th>
+            <th>Exit</th>
+            <th>Qty</th>
+            <th>PnL</th>
+            <th>Return %</th>
+            <th>Mode</th>
+            <th>Duration</th>
+            <th>Exit Reason</th>
+          </tr>
+        </thead>
+        <tbody id="bt-trades-body">
+          {% for t in trades %}
+          <tr data-order-id="{{ t.order_id }}">
+            <td class="font-mono">{{ t.order_id }}</td>
+            <td class="text-xs">{{ t.symbol }}</td>
+            <td><span class="{% if t.trade_type == 'LONG' %}signal-buy{% else %}signal-sell{% endif %} text-xs">{{ t.trade_type }}</span></td>
+            <td class="text-xs opacity-70 whitespace-nowrap">{{ t.entry_time|date:"M d H:i:s"|default:"--" }}</td>
+            <td class="font-mono text-xs">{{ t.entry_price|floatformat:2 }}</td>
+            <td class="text-xs opacity-70 whitespace-nowrap">{{ t.exit_time|date:"M d H:i:s"|default:"--" }}</td>
+            <td class="font-mono text-xs">{{ t.exit_price|floatformat:2 }}</td>
+            <td class="font-mono">{{ t.quantity }}</td>
+            <td class="font-mono text-xs {% if t.pnl >= 0 %}pnl-positive{% else %}pnl-negative{% endif %}">{% if t.pnl >= 0 %}+{% endif %}{{ t.pnl|floatformat:2 }}</td>
+            <td class="font-mono text-xs {% if t.return_pct >= 0 %}pnl-positive{% else %}pnl-negative{% endif %}">{{ t.return_pct|floatformat:2 }}%</td>
+            <td>{% if t.is_paper %}<span class="badge badge-warning badge-xs">PAPER</span>{% else %}<span class="badge badge-ghost badge-xs">REAL</span>{% endif %}</td>
+            <td class="text-xs opacity-60">{{ t.duration }}</td>
+            <td class="text-xs max-w-32 truncate opacity-60" title="{{ t.exit_reason }}">{{ t.exit_reason }}</td>
+          </tr>
+          {% empty %}
+          <tr id="bt-trades-empty"><td colspan="13" class="text-center py-8 opacity-40">Waiting for trades...</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-base-200 border border-base-300 rounded-lg">
+    <div class="flex items-center justify-between p-4 border-b border-base-300 flex-wrap gap-2">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-medium">Celery Worker Log</span>
+        <span id="bt-log-conn" class="badge badge-ghost badge-xs">offline</span>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <label class="label cursor-pointer gap-2 py-0">
+          <span class="text-xs opacity-60">autoscroll</span>
+          <input id="bt-log-autoscroll" type="checkbox" class="toggle toggle-xs" checked>
+        </label>
+        <select id="bt-log-level" class="select select-xs w-24">
+          <option value="DEBUG">DEBUG</option>
+          <option value="INFO" selected>INFO</option>
+          <option value="WARNING">WARNING</option>
+          <option value="ERROR">ERROR</option>
+        </select>
+        <button type="button" id="bt-log-clear" class="btn btn-ghost btn-xs">Clear</button>
+      </div>
+    </div>
+    <div id="bt-log" class="p-3 font-mono text-xs leading-relaxed bg-base-300 max-h-80 overflow-y-auto">
+      <div class="opacity-30">Waiting for worker output...</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/backtest_detail.js' %}"></script>
+{% endblock %}

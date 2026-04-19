@@ -1,0 +1,88 @@
+# Fast Parameters for Multi-Symbol Processing
+# Optimized for speed with minimal accuracy loss
+
+vomc:
+  buy_threshold: 0.3
+  sell_threshold: 0.7
+
+hmm:
+  n_regimes: 3
+  n_iter: 20           # Reduced from 100 for faster training
+  tol: 0.05            # Higher tolerance for faster convergence
+  min_covar: 1.0e-06
+  covariance_type: diag
+
+xgboost:
+  n_estimators: 30     # Reduced from 300 for faster training
+  max_depth: 3         # Shallower trees for speed
+  learning_rate: 0.1
+  n_jobs: 2            # Use multiple cores but not all
+
+rl:
+  # Observation window for RL agent (number of periods to analyze)
+  window: 10
+  
+  # Path to trained PPO model (null = use rule-based prediction)
+  model_path: null
+  
+  # Number of consecutive SELL signals to trigger immediate sell
+  sell_threshold: 3
+  
+  # Rule-based prediction parameters (used when model_path is null)
+  rule_based:
+    # Recent trend analysis window (last N periods)
+    recent_window: 10
+    
+    # BUY signal thresholds
+    buy_recent_threshold: 0.7   # Recent uptrend threshold (0-1)
+    buy_overall_threshold: 0.6   # Overall uptrend threshold (0-1)
+    
+    # SELL signal thresholds
+    sell_recent_threshold: 0.5   # Recent downtrend threshold (0-1)
+    sell_overall_threshold: 0.55  # Overall downtrend threshold (0-1)
+
+# Features for models (must match what's created in utils/features.py)
+daily_features:
+  - daily_return
+  - sma_5
+  - sma_20
+  - volatility
+  
+intraday_features:
+  - return
+
+# Trading parameters
+trading:
+  stop_loss_amount: 2.0  # Stop loss amount in ₹ per order
+
+# Filter settings
+filters:
+  volatility_threshold: 0.01
+  use_sma50_200: true
+  breakout_lookback: 20
+  rsi_buy: 55
+  rsi_sell: 45
+  confidence_threshold: 0.25
+  min_confirmations: 1
+  selected_filters:
+    buy:
+      use_volatility: true
+      use_confidence: true
+      use_trend: true
+      use_breakout: true
+      use_momentum: true
+      require_all: false  # Set to false for faster (less strict) mode
+    sell:
+      use_volatility: true
+      use_confidence: true
+      use_trend: true
+      use_breakout: true
+      use_momentum: true
+      require_all: false  # Set to false for faster (less strict) mode
+
+# Performance settings
+performance:
+  max_intraday_rows: 1000  # Limit intraday data size
+  enable_progress_logs: true
+  enable_timing: true
+

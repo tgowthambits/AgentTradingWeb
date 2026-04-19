@@ -1,0 +1,242 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{% block title %}Trading Platform{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="{% static 'js/chart_layouts.js' %}"></script>
+  <script>
+    (function () {
+      try {
+        var s = localStorage.getItem("sidebarState");
+        if (s !== "collapsed" && s !== "expanded") s = "expanded";
+        document.documentElement.setAttribute("data-sidebar", s);
+      } catch (e) {
+        document.documentElement.setAttribute("data-sidebar", "expanded");
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      --sidebar-w: 15rem;
+      --sidebar-w-collapsed: 3.5rem;
+      --navbar-h: 3.25rem;
+    }
+
+    html, body { overflow-x: hidden; }
+
+    .pnl-positive { color: oklch(0.72 0.19 154); }
+    .pnl-negative { color: oklch(0.63 0.24 29); }
+    .signal-buy   { color: oklch(0.72 0.19 154); font-weight: 600; }
+    .signal-sell  { color: oklch(0.63 0.24 29); font-weight: 600; }
+    .signal-hold  { color: oklch(0.7 0.03 256); }
+
+    .app-sidebar {
+      width: var(--sidebar-w);
+      transition: width 180ms ease;
+    }
+
+    @media (min-width: 1024px) {
+      [data-sidebar="collapsed"] .app-sidebar {
+        width: var(--sidebar-w-collapsed);
+      }
+      [data-sidebar="collapsed"] .sidebar-label,
+      [data-sidebar="collapsed"] .sidebar-title-text,
+      [data-sidebar="collapsed"] .sidebar-brand-text,
+      [data-sidebar="collapsed"] .sidebar-version { display: none; }
+      [data-sidebar="collapsed"] .sidebar-menu > li > a {
+        justify-content: center;
+        padding-inline: 0.5rem;
+      }
+      [data-sidebar="collapsed"] .sidebar-menu .menu-title { padding: 0.25rem 0; }
+      [data-sidebar="collapsed"] .sidebar-header { justify-content: center; padding-inline: 0.5rem; }
+    }
+
+    .app-main { min-width: 0; }
+
+    @media (max-width: 640px) {
+      .hide-on-xs { display: none; }
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="drawer lg:drawer-open">
+  <input id="sidebar-toggle" type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content flex flex-col min-h-screen min-w-0">
+
+    <div class="navbar bg-base-200 border-b border-base-300 sticky top-0 z-30 min-h-[var(--navbar-h)] h-[var(--navbar-h)] px-2 sm:px-3">
+      <div class="navbar-start gap-1">
+        <label for="sidebar-toggle"
+               class="btn btn-ghost btn-sm btn-square lg:hidden"
+               aria-label="Open navigation">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </label>
+        <button type="button"
+                id="btn-collapse-sidebar"
+                class="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
+                aria-label="Toggle sidebar"
+                title="Toggle sidebar (Ctrl+B)">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <span class="text-sm font-semibold tracking-tight px-1 hidden sm:inline">AgenticTrading</span>
+      </div>
+
+      <div class="navbar-end gap-1">
+        <label class="swap swap-rotate btn btn-ghost btn-sm btn-square" aria-label="Toggle theme">
+          <input type="checkbox" class="theme-controller" value="light" />
+          <svg class="swap-off h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></svg>
+          <svg class="swap-on h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0Zm11.394-5.834a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59ZM21.75 12a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1 0-1.5H21a.75.75 0 0 1 .75.75Zm-3.916 6.894a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 1 0-1.061 1.06l1.59 1.591ZM12 18a.75.75 0 0 1 .75.75V21a.75.75 0 0 1-1.5 0v-2.25A.75.75 0 0 1 12 18Zm-4.834-.416a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59ZM6 12a.75.75 0 0 1-.75.75H3a.75.75 0 0 1 0-1.5h2.25A.75.75 0 0 1 6 12Zm.416-5.834a.75.75 0 0 0 1.06-1.06L5.886 3.515a.75.75 0 1 0-1.06 1.06l1.59 1.591Z"/></svg>
+        </label>
+      </div>
+    </div>
+
+    <main class="app-main flex-1 p-3 sm:p-4 lg:p-6 w-full mx-auto {% block main_width %}max-w-[1400px]{% endblock %}">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-base-300 px-3 sm:px-6 py-3">
+      <div class="flex items-center justify-between text-xs opacity-50 flex-wrap gap-2">
+        <span>AgenticTrading Platform v1.0</span>
+        <span class="hide-on-xs">Django + Channels + daisyUI</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <div class="drawer-side z-40">
+    <label for="sidebar-toggle" aria-label="Close sidebar" class="drawer-overlay"></label>
+    <aside class="app-sidebar bg-base-200 min-h-full border-r border-base-300 flex flex-col overflow-hidden">
+
+      <div class="sidebar-header p-3 border-b border-base-300 flex items-center gap-2 h-[var(--navbar-h)]">
+        <div class="w-7 h-7 shrink-0 rounded bg-primary/15 flex items-center justify-center" aria-hidden="true">
+          <svg class="w-4 h-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17l6-6 4 4 8-8"/>
+          </svg>
+        </div>
+        <span class="sidebar-brand-text text-sm font-semibold tracking-tight truncate">AgenticTrading</span>
+      </div>
+
+      <ul class="menu menu-sm flex-1 p-2 gap-0.5 sidebar-menu overflow-y-auto overflow-x-hidden flex-nowrap">
+
+        <li class="menu-title sidebar-title text-xs uppercase tracking-wider opacity-50 pt-1">
+          <span class="sidebar-title-text">Overview</span>
+        </li>
+        <li>
+          <a href="{% url 'dashboard' %}"
+             title="Dashboard"
+             class="{% if request.resolver_match.url_name == 'dashboard' %}menu-active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span class="sidebar-label truncate">Dashboard</span>
+          </a>
+        </li>
+
+        <li class="menu-title sidebar-title text-xs uppercase tracking-wider opacity-50 pt-3">
+          <span class="sidebar-title-text">Backtesting</span>
+        </li>
+        <li>
+          <a href="{% url 'backtest' %}"
+             title="Run Backtest"
+             class="{% if request.resolver_match.url_name == 'backtest' %}menu-active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span class="sidebar-label truncate">Run Backtest</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'backtest_results' %}"
+             title="Saved Results"
+             class="{% if 'results' in request.resolver_match.url_name %}menu-active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="sidebar-label truncate">Saved Results</span>
+          </a>
+        </li>
+
+        <li class="menu-title sidebar-title text-xs uppercase tracking-wider opacity-50 pt-3">
+          <span class="sidebar-title-text">Trading</span>
+        </li>
+        <li>
+          <a href="{% url 'live_trading' %}"
+             title="Live Trading"
+             class="{% if request.resolver_match.url_name == 'live_trading' %}menu-active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+            <span class="sidebar-label truncate">Live Trading</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'live_sessions' %}"
+             title="Live Sessions"
+             class="{% if request.resolver_match.url_name == 'live_sessions' or request.resolver_match.url_name == 'live_session_detail' %}menu-active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <span class="sidebar-label truncate">Live Sessions</span>
+          </a>
+        </li>
+
+        <li class="menu-title sidebar-title text-xs uppercase tracking-wider opacity-50 pt-3">
+          <span class="sidebar-title-text">Settings</span>
+        </li>
+        <li>
+          <a href="{% url 'config' %}"
+             title="Configuration"
+             class="{% if request.resolver_match.url_name == 'config' %}menu-active{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="sidebar-label truncate">Configuration</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-version p-3 border-t border-base-300 text-xs opacity-40">
+        v1.0.0
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById("btn-collapse-sidebar");
+    var html = document.documentElement;
+    function toggle() {
+      var cur = html.getAttribute("data-sidebar") === "collapsed" ? "collapsed" : "expanded";
+      var next = cur === "expanded" ? "collapsed" : "expanded";
+      html.setAttribute("data-sidebar", next);
+      try { localStorage.setItem("sidebarState", next); } catch (e) {}
+      window.dispatchEvent(new Event("resize"));
+    }
+    if (btn) btn.addEventListener("click", toggle);
+    document.addEventListener("keydown", function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === "b") {
+        if (window.matchMedia("(min-width: 1024px)").matches) {
+          e.preventDefault();
+          toggle();
+        }
+      }
+    });
+  })();
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

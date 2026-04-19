@@ -1,0 +1,20 @@
+# Web UI Requirements for Trading System
+
+# Backend Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+websockets==12.0
+
+# Real-time Data
+redis==5.0.1
+aioredis==2.0.1
+
+# Data Handling
+pandas==2.1.4
+numpy==1.24.3
+pydantic==2.5.3
+
+# Additional utilities
+python-multipart==0.0.6
+jinja2==3.1.3
+

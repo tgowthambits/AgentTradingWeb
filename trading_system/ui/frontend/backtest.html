@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest Results - Trading System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="backtest-styles.css">
+</head>
+<body class="bg-dark text-light">
+    
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-dark bg-gradient-dark border-bottom border-secondary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-arrow-left-circle"></i>
+                <strong>Back to Live Trading</strong>
+            </a>
+            <h3 class="text-center flex-grow-1 mb-0">
+                <i class="bi bi-clock-history text-warning"></i>
+                <strong>BACKTEST RESULTS</strong>
+            </h3>
+            <button class="btn btn-outline-info" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-5">
+            <div class="spinner-border text-info" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted" id="loadingMessage">Connecting to backtest stream...</p>
+            <p class="mt-2 text-muted small">
+                <i class="bi bi-lightning-charge-fill text-warning"></i>
+                Waiting for live backtest updates
+            </p>
+        </div>
+
+        <!-- No Data State -->
+        <div id="noDataState" class="text-center py-5" style="display: none;">
+            <i class="bi bi-inbox" style="font-size: 4rem; color: var(--muted-gray);"></i>
+            <h4 class="mt-3 text-muted">No Backtest Results Available</h4>
+            <p class="text-muted">Run a backtest to see results here.</p>
+            <button class="btn btn-primary" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> Check Again
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" style="display: none;">
+
+            <!-- Live Symbols & LTP Table (Real-time during backtest) -->
+            <div class="row mb-4" id="symbolsLTPSection">
+                <div class="col-12">
+                    <div class="card bg-dark border-primary">
+                        <div class="card-header bg-gradient-dark border-primary d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-lightning-charge-fill text-primary"></i>
+                                Live Symbols & LTP
+                                <span class="badge bg-info ms-2" id="backtestIteration">Iteration: 0</span>
+                            </h5>
+                            <span class="text-muted small" id="backtestTimestamp">--</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover table-bordered table-sm" id="symbolsLTPTable">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Symbol</th>
+                                            <th>LTP (₹)</th>
+                                            <th>Change</th>
+                                            <th>Change %</th>
+                                            <th>Open Price</th>
+                                            <th>High</th>
+                                            <th>Low</th>
+                                            <th>Volume</th>
+                                            <th>Signal</th>
+                                            <th>Position</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="symbolsLTPTableBody">
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted">
+                                                <i class="bi bi-hourglass-split"></i> Waiting for backtest to start...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-gradient-dark border-info">
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <h6 class="text-muted mb-1">Initial Capital</h6>
+                                    <h4 id="initialCapital" class="text-info mb-0">₹0</h4>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-muted mb-1">Final Capital</h6>
+                                    <h4 id="finalCapital" class="mb-0">₹0</h4>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-muted mb-1">Total PnL</h6>
+                                    <h4 id="totalPnL" class="mb-0">₹0</h4>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6 class="text-muted mb-1">Return %</h6>
+                                    <h4 id="returnPct" class="mb-0">0%</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics Matrix -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-dark border-cyan">
+                        <div class="card-header bg-gradient-dark border-cyan">
+                            <h5 class="mb-0">
+                                <i class="bi bi-bar-chart-fill text-cyan"></i>
+                                📊 Performance Metrics Matrix
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover table-bordered" id="metricsTable">
+                                    <thead class="table-cyan">
+                                        <tr>
+                                            <th width="25%">Category</th>
+                                            <th width="40%">Metric</th>
+                                            <th width="35%">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="metricsTableBody">
+                                        <!-- Metrics will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Completed Trades -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-dark border-success">
+                        <div class="card-header bg-gradient-dark border-success">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-check text-success"></i>
+                                📋 All Completed Trades
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover table-bordered table-sm" id="tradesTable">
+                                    <thead class="table-success">
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Symbol</th>
+                                            <th>Type</th>
+                                            <th>Entry ₹</th>
+                                            <th id="entryHighHeader" style="display: none;">Entry High ₹</th>
+                                            <th>Exit ₹</th>
+                                            <th id="exitLowHeader" style="display: none;">Exit Low ₹</th>
+                                            <th>Qty</th>
+                                            <th>PnL ₹</th>
+                                            <th>Return %</th>
+                                            <th>Mode</th>
+                                            <th>Duration</th>
+                                            <th>Total Charges ₹</th>
+                                            <th>Net Profit ₹</th>
+                                            <th>Entry Reason</th>
+                                            <th>Exit Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tradesTableBody">
+                                        <!-- Trades will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Circuit Breaker Analysis -->
+            <div id="circuitBreakerSection" class="row mb-4" style="display: none;">
+                <div class="col-12">
+                    <div class="card bg-dark border-warning">
+                        <div class="card-header bg-gradient-dark border-warning">
+                            <h5 class="mb-0">
+                                <i class="bi bi-shield-check text-warning"></i>
+                                🛡️ Circuit Breaker Impact Analysis
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-md-4">
+                                    <div class="p-3 border border-danger rounded">
+                                        <h6 class="text-muted">WITHOUT Circuit Breaker</h6>
+                                        <h3 id="capitalWithout" class="text-danger">₹0</h3>
+                                        <p id="pnlWithout" class="mb-0 text-muted">PnL: ₹0</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 border border-success rounded">
+                                        <h6 class="text-muted">WITH Circuit Breaker</h6>
+                                        <h3 id="capitalWith" class="text-success">₹0</h3>
+                                        <p id="pnlWith" class="mb-0 text-muted">PnL: ₹0</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 border border-warning rounded">
+                                        <h6 class="text-muted">Capital Saved</h6>
+                                        <h3 id="capitalSaved" class="text-warning">₹0</h3>
+                                        <p id="paperTrades" class="mb-0 text-muted">0 Paper Trades</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Comparison Chart -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-center text-muted mb-3">Total Trades Comparison</h6>
+                                    <div class="d-flex justify-content-around align-items-center">
+                                        <div class="text-center">
+                                            <p class="mb-1 text-muted">WITHOUT</p>
+                                            <h4 id="tradesWithout" class="text-danger">0</h4>
+                                        </div>
+                                        <div class="text-center">
+                                            <i class="bi bi-arrow-right text-warning" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="mb-1 text-muted">WITH</p>
+                                            <h4 id="tradesWith" class="text-success">0</h4>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="mb-1 text-muted">Avoided</p>
+                                            <h4 id="tradesAvoided" class="text-warning">0</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-center text-muted mb-3">Win Rate Comparison</h6>
+                                    <div class="d-flex justify-content-around align-items-center">
+                                        <div class="text-center">
+                                            <p class="mb-1 text-muted">WITHOUT</p>
+                                            <h4 id="winRateWithout" class="text-danger">0%</h4>
+                                            <small id="wlWithout" class="text-muted">(0W/0L)</small>
+                                        </div>
+                                        <div class="text-center">
+                                            <i class="bi bi-arrow-right text-warning" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="mb-1 text-muted">WITH</p>
+                                            <h4 id="winRateWith" class="text-success">0%</h4>
+                                            <small id="wlWith" class="text-muted">(0W/0L)</small>
+                                        </div>
+                                        <div class="text-center" id="improvementSection" style="display: none;">
+                                            <p class="mb-1 text-muted">Improvement</p>
+                                            <h4 id="winRateImprovement" class="text-warning">+0%</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loss Recovery History -->
+            <div class="row mb-4" id="lossRecoverySection" style="display: none;">
+                <div class="col-12">
+                    <div class="card bg-dark border-warning">
+                        <div class="card-header bg-gradient-dark border-warning">
+                            <h5 class="mb-0">
+                                <i class="bi bi-arrow-repeat text-warning"></i>
+                                🔄 Loss Recovery History
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Loss History -->
+                            <div class="mb-4">
+                                <h6 class="text-cyan mb-3">📉 Loss History</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover table-sm" id="lossHistoryTable">
+                                        <thead class="table-danger">
+                                            <tr>
+                                                <th>Trade ID</th>
+                                                <th>Symbol</th>
+                                                <th>Loss Amount</th>
+                                                <th>Entry ₹</th>
+                                                <th>Exit ₹</th>
+                                                <th>Quantity</th>
+                                                <th>Timestamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lossHistoryBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Recovery History -->
+                            <div class="mb-4">
+                                <h6 class="text-success mb-3">✅ Recovery History</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover table-sm" id="recoveryHistoryTable">
+                                        <thead class="table-success">
+                                            <tr>
+                                                <th>Trade ID</th>
+                                                <th>Symbol</th>
+                                                <th>Loss Amount</th>
+                                                <th>Recovered</th>
+                                                <th>Remaining</th>
+                                                <th>Status</th>
+                                                <th>Entry ₹</th>
+                                                <th>Exit ₹</th>
+                                                <th>Quantity</th>
+                                                <th>Timestamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recoveryHistoryBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Current Status -->
+                            <div>
+                                <h6 class="text-warning mb-3">⚠️ Current Loss Recovery Status</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover table-sm" id="lossStatusTable">
+                                        <thead class="table-warning">
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Unrecovered Loss</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lossStatusBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backtest Configuration -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-header bg-gradient-dark">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear-fill"></i>
+                                Backtest Configuration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-dark table-sm">
+                                <tbody id="configTableBody">
+                                    <!-- Config will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-header bg-gradient-dark">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i>
+                                Backtest Timeline
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-dark table-sm">
+                                <tbody id="timelineTableBody">
+                                    <!-- Timeline will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="backtest.js"></script>
+</body>
+</html>
+

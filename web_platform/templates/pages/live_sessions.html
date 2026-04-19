@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Live Sessions - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h1 class="text-lg font-semibold">Live Trading Sessions</h1>
+    <div class="flex items-center gap-3 flex-wrap">
+      <span id="sessions-updated" class="text-xs opacity-50">Loading...</span>
+      <button type="button" id="btn-refresh-sessions" class="btn btn-ghost btn-xs">Refresh</button>
+      <a href="{% url 'live_trading' %}" class="btn btn-primary btn-sm">Start New Session</a>
+    </div>
+  </div>
+
+  <div class="bg-base-200 border border-base-300 rounded-lg">
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Symbols</th>
+            <th>Iterations</th>
+            <th>Trades</th>
+            <th>PnL</th>
+            <th>Return %</th>
+            <th>Win Rate</th>
+            <th>Started</th>
+            <th>Stopped</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="sessions-table-body">
+          <tr><td colspan="11" class="text-center opacity-40 py-8">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const tbody = document.getElementById("sessions-table-body");
+  const updatedEl = document.getElementById("sessions-updated");
+  const btnRefresh = document.getElementById("btn-refresh-sessions");
+
+  const ACTIVE_STATUSES = new Set(["idle", "pending", "running", "paused", "stopping"]);
+  let timer = null;
+
+  function getCookie(name) {
+    const v = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+    return v ? v.pop() : "";
+  }
+
+  function badgeFor(status) {
+    const map = {
+      running:  "badge-warning",
+      paused:   "badge-ghost",
+      pending:  "badge-info",
+      idle:     "badge-info",
+      stopping: "badge-ghost",
+      stopped:  "badge-ghost",
+      error:    "badge-error",
+    };
+    const cls = map[status] || "badge-ghost";
+    return `<span class="badge ${cls} badge-xs">${status}</span>`;
+  }
+
+  function pnlCell(val) {
+    if (val === null || val === undefined || val === "") return "--";
+    const n = parseFloat(val) || 0;
+    const cls = n >= 0 ? "pnl-positive" : "pnl-negative";
+    const sign = n >= 0 ? "+" : "";
+    return `<span class="font-mono text-sm ${cls}">${sign}${n.toFixed(2)}</span>`;
+  }
+
+  function truncate(s, n) {
+    if (!s) return "";
+    return s.length > n ? s.slice(0, n) + "…" : s;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "--";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, {
+        month: "short", day: "2-digit",
+        hour: "2-digit", minute: "2-digit",
+      });
+    } catch { return iso; }
+  }
+
+  async function deleteSession(id) {
+    if (!confirm(`Delete session #${id}? Trades and cached bars will be removed.`)) return;
+    try {
+      const resp = await fetch(`/api/live/sessions/${id}/`, {
+        method: "DELETE",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      refresh();
+    } catch (err) {
+      alert(`Delete failed: ${err.message}`);
+    }
+  }
+
+  function render(sessions) {
+    if (!sessions.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="11" class="text-center py-12 opacity-40">
+          No live sessions yet. <a href="{% url 'live_trading' %}" class="link link-primary">Start one now</a>.
+        </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = sessions.map(s => {
+      const summary = s.summary_json || {};
+      const metrics = s.metrics_json || {};
+      const symbols = Array.isArray(s.symbols) ? s.symbols.join(", ") : "";
+      const pnl = summary.total_pnl ?? s.total_pnl;
+      const ret = summary.returns_pct;
+      const trades = metrics.total_trades ?? s.total_trades;
+      const winRate = metrics.win_rate;
+      const canDelete = !ACTIVE_STATUSES.has(s.status);
+
+      return `
+        <tr data-session-id="${s.id}" data-status="${s.status}">
+          <td><a href="/live/sessions/${s.id}/" class="link link-hover font-mono">#${s.id}</a></td>
+          <td>${badgeFor(s.status)}</td>
+          <td class="text-xs max-w-48 truncate" title="${symbols}">${truncate(symbols, 40)}</td>
+          <td class="font-mono">${s.iterations ?? 0}</td>
+          <td class="font-mono">${trades ?? 0}</td>
+          <td>${pnl !== undefined && pnl !== null ? pnlCell(pnl) : "--"}</td>
+          <td>${ret !== undefined && ret !== null ? `<span class="font-mono text-sm ${ret >= 0 ? 'pnl-positive' : 'pnl-negative'}">${ret}%</span>` : "--"}</td>
+          <td>${winRate !== undefined && winRate !== null ? `<span class="font-mono text-sm">${winRate}%</span>` : "--"}</td>
+          <td class="text-xs opacity-50">${fmtDate(s.started_at)}</td>
+          <td class="text-xs opacity-50">${fmtDate(s.stopped_at)}</td>
+          <td class="flex gap-1">
+            <a href="/live/sessions/${s.id}/" class="btn btn-ghost btn-xs">Details</a>
+            ${canDelete ? `<button type="button" class="btn btn-ghost btn-xs text-error" data-action="delete" data-id="${s.id}">Delete</button>` : ""}
+          </td>
+        </tr>`;
+    }).join("");
+
+    tbody.querySelectorAll('[data-action="delete"]').forEach(btn => {
+      btn.addEventListener("click", () => deleteSession(btn.dataset.id));
+    });
+  }
+
+  async function refresh() {
+    try {
+      const resp = await fetch("/api/live/sessions/");
+      if (!resp.ok) return;
+      const sessions = await resp.json();
+      render(sessions);
+
+      const hasActive = sessions.some(s => ACTIVE_STATUSES.has(s.status));
+      updatedEl.textContent = `Updated ${new Date().toLocaleTimeString()}${hasActive ? " — live" : ""}`;
+      schedule(hasActive);
+    } catch (e) {
+      updatedEl.textContent = "Update failed";
+      schedule(false);
+    }
+  }
+
+  function schedule(active) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(refresh, active ? 2000 : 15000);
+  }
+
+  btnRefresh.addEventListener("click", refresh);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refresh();
+  });
+
+  refresh();
+})();
+</script>
+{% endblock %}

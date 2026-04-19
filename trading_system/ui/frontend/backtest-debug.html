@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backtest WebSocket Debug</title>
+    <style>
+        body { background: #1a1a1a; color: #0f0; font-family: monospace; padding: 20px; }
+        #messages { border: 1px solid #0f0; padding: 10px; height: 600px; overflow-y: auto; }
+        .message { margin: 5px 0; padding: 5px; border-bottom: 1px solid #333; }
+        .connected { color: #0f0; }
+        .disconnected { color: #f00; }
+        .backtest { color: #ff0; }
+    </style>
+</head>
+<body>
+    <h1>🔌 WebSocket Debug Console</h1>
+    <p id="status" class="disconnected">Status: Disconnected</p>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="clearMessages()">Clear</button>
+    <h2>Messages:</h2>
+    <div id="messages"></div>
+
+    <script>
+        let ws = null;
+        const messagesDiv = document.getElementById('messages');
+        const statusDiv = document.getElementById('status');
+
+        function log(message, className = '') {
+            const div = document.createElement('div');
+            div.className = 'message ' + className;
+            div.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            messagesDiv.insertBefore(div, messagesDiv.firstChild);
+        }
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('Already connected!');
+                return;
+            }
+
+            ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = function() {
+                statusDiv.textContent = 'Status: Connected';
+                statusDiv.className = 'connected';
+                log('✅ WebSocket Connected!', 'connected');
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    const type = data.type || 'unknown';
+                    
+                    if (type === 'backtest_update') {
+                        const state = data.data || {};
+                        const backtestData = state.data || {};
+                        log(`📊 BACKTEST UPDATE: Iteration ${backtestData.current_iteration}, Progress: ${backtestData.progress?.toFixed(1)}%, Capital: ₹${backtestData.current_capital}`, 'backtest');
+                    } else {
+                        log(`📨 Message type: ${type}`, '');
+                    }
+                    
+                    // Show full message
+                    console.log('Full message:', data);
+                } catch (e) {
+                    log('❌ Error parsing message: ' + e.message);
+                    console.error('Raw message:', event.data);
+                }
+            };
+
+            ws.onclose = function() {
+                statusDiv.textContent = 'Status: Disconnected';
+                statusDiv.className = 'disconnected';
+                log('🔴 WebSocket Disconnected', 'disconnected');
+            };
+
+            ws.onerror = function(error) {
+                log('❌ WebSocket Error: ' + error);
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function clearMessages() {
+            messagesDiv.innerHTML = '';
+        }
+
+        // Auto-connect on load
+        connect();
+
+        // Keep connection alive
+        setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({command: 'ping'}));
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
+

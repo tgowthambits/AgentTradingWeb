@@ -1,0 +1,203 @@
+/* Backtest-specific styles */
+
+:root {
+    --cyan: #00d9ff;
+    --success: #28a745;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --muted-gray: #6c757d;
+}
+
+.bg-gradient-dark {
+    background: linear-gradient(135deg, #1a1d29 0%, #2d3142 100%);
+}
+
+.border-cyan {
+    border-color: var(--cyan) !important;
+}
+
+.text-cyan {
+    color: var(--cyan) !important;
+}
+
+.table-cyan thead {
+    background-color: rgba(0, 217, 255, 0.1);
+    color: var(--cyan);
+}
+
+/* Metric Category Styling */
+.metric-category {
+    font-weight: bold;
+    color: var(--warning);
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.metric-divider {
+    color: var(--muted-gray);
+    text-align: center;
+}
+
+/* Trade Mode Badges */
+.mode-real {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.mode-paper {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+/* PnL Color Coding */
+.pnl-positive {
+    color: var(--success) !important;
+    font-weight: bold;
+}
+
+.pnl-negative {
+    color: var(--danger) !important;
+    font-weight: bold;
+}
+
+.pnl-neutral {
+    color: var(--muted-gray) !important;
+}
+
+/* Trade Type Badges */
+.trade-long {
+    color: var(--success) !important;
+    font-weight: bold;
+}
+
+.trade-short {
+    color: var(--danger) !important;
+    font-weight: bold;
+}
+
+/* Comparison Cards */
+.comparison-card {
+    transition: transform 0.2s;
+}
+
+.comparison-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Table Improvements */
+#tradesTable tbody tr:hover {
+    background-color: rgba(0, 217, 255, 0.1) !important;
+}
+
+#metricsTable tbody tr:hover {
+    background-color: rgba(0, 217, 255, 0.05) !important;
+}
+
+/* Responsive Font Sizes */
+@media (max-width: 768px) {
+    h3, h4 {
+        font-size: 1.2rem;
+    }
+    
+    .table {
+        font-size: 0.85rem;
+    }
+}
+
+/* Animation for Loading */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.spinner-border {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Scrollable Tables */
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #1a1d29;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--cyan);
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #00b8d9;
+}
+
+/* Status Indicators */
+.status-success {
+    color: var(--success);
+}
+
+.status-warning {
+    color: var(--warning);
+}
+
+.status-danger {
+    color: var(--danger);
+}
+
+/* Circuit Breaker Visual */
+.circuit-breaker-active {
+    border: 2px solid var(--danger);
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        border-color: var(--danger);
+    }
+    50% {
+        border-color: var(--warning);
+    }
+}
+
+/* Card Hover Effects */
+.card {
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+}
+
+/* Exit Reason Truncation */
+.exit-reason {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.exit-reason:hover {
+    white-space: normal;
+    overflow: visible;
+}
+

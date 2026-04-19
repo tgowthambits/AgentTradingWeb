@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Run Backtest - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h1 class="text-lg font-semibold">Run Backtest</h1>
+    <a href="{% url 'backtest_results' %}" class="btn btn-ghost btn-sm">View Saved Results</a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-1 flex flex-col gap-4">
+
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="text-sm font-medium mb-3">Backtest Configuration</div>
+
+        <form id="backtest-form" class="flex flex-col gap-3">
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Symbols</legend>
+            <textarea id="bt-symbols" class="textarea textarea-sm w-full" rows="3" placeholder="One symbol per line">{% for s in symbols %}{{ s }}
+{% endfor %}</textarea>
+          </fieldset>
+
+          <div class="grid grid-cols-2 gap-3">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">Start Date</legend>
+              <input type="datetime-local" id="bt-start" class="input input-sm w-full"
+                     value="{{ date_range.start_date|default:'2026-04-15T09:15' }}">
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">End Date</legend>
+              <input type="datetime-local" id="bt-end" class="input input-sm w-full"
+                     value="{{ date_range.end_date|default:'2026-04-16T16:15' }}">
+            </fieldset>
+          </div>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Resolution</legend>
+            <select id="bt-resolution" class="select select-sm w-full">
+              {% for val, label in resolutions %}
+              <option value="{{ val }}" {% if val == resolution %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Config Preset</legend>
+            <select id="bt-config" class="select select-sm w-full">
+              <option value="">Use default (YAML)</option>
+              {% for c in configs %}
+              <option value="{{ c.pk }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </fieldset>
+
+          <button type="submit" id="btn-start-backtest" class="btn btn-primary btn-sm w-full mt-2">
+            Start Backtest
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-medium">Market Data</span>
+          <span id="data-file-count" class="badge badge-ghost badge-xs">{{ data_files|length }} files</span>
+        </div>
+
+        <div id="data-files-list" class="flex flex-col gap-1 mb-3 max-h-40 overflow-y-auto">
+          {% if data_files %}
+            {% for f in data_files %}
+            <div class="flex items-center justify-between text-xs bg-base-300 rounded px-2 py-1" data-symbol="{{ f.name }}">
+              <span class="font-mono truncate">{{ f.name }}</span>
+              <div class="flex items-center gap-2">
+                <span class="opacity-50">{{ f.size_kb }}KB</span>
+                <button type="button" class="btn-delete-data opacity-40 hover:opacity-100" data-filename="{{ f.filename }}">&times;</button>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-xs opacity-40 py-2 text-center">No data files. Upload CSV below.</div>
+          {% endif %}
+        </div>
+
+        <form id="upload-form" class="flex flex-col gap-2">
+          <input type="file" id="csv-files" class="file-input file-input-xs w-full" accept=".csv" multiple />
+          <button type="submit" id="btn-upload" class="btn btn-ghost btn-xs w-full">Upload CSV Files</button>
+        </form>
+        <p class="text-xs opacity-40 mt-2">File names become symbol names (e.g. <span class="font-mono">NIFTY2642124250PE.csv</span>)</p>
+      </div>
+
+      <div id="bt-status-panel" class="bg-base-200 border border-base-300 rounded-lg p-4 hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium">Progress</span>
+          <span id="bt-status-badge" class="badge badge-warning badge-xs">pending</span>
+        </div>
+        <progress id="bt-progress-bar" class="progress progress-primary w-full" value="0" max="100"></progress>
+        <div class="flex items-center justify-between mt-1 text-xs opacity-60">
+          <span id="bt-progress-text">0%</span>
+          <span id="bt-bars-text">0 / 0 bars</span>
+        </div>
+        <div id="bt-message" class="text-xs mt-2 opacity-50"></div>
+        <div id="bt-controls" class="flex gap-2 mt-3 hidden">
+          <button type="button" id="btn-pause-backtest" class="btn btn-ghost btn-xs flex-1">Pause</button>
+          <button type="button" id="btn-resume-backtest" class="btn btn-ghost btn-xs flex-1 hidden">Resume</button>
+          <button type="button" id="btn-stop-backtest" class="btn btn-error btn-xs flex-1">Stop</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="lg:col-span-2 flex flex-col gap-4">
+
+      <div id="bt-live-panel" class="bg-base-200 border border-base-300 rounded-lg hidden">
+        <div class="p-4 border-b border-base-300">
+          <span class="text-sm font-medium">Live Results</span>
+        </div>
+        <div class="p-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Running PnL</div>
+              <div id="bt-running-pnl" class="text-lg font-mono font-semibold">0.00</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Trades</div>
+              <div id="bt-trade-count" class="text-lg font-mono font-semibold">0</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Iteration</div>
+              <div id="bt-iteration" class="text-lg font-mono font-semibold">0</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Open Positions</div>
+              <div id="bt-open-count" class="text-lg font-mono font-semibold">0</div>
+            </div>
+          </div>
+
+          <div class="text-xs font-medium mb-2 opacity-60">Latest Signals</div>
+          <div id="bt-signals-list" class="flex flex-wrap gap-2 mb-4"></div>
+
+          <div class="text-xs font-medium mb-2 opacity-60">Open Positions</div>
+          <div class="overflow-x-auto">
+            <table class="table table-xs">
+              <thead>
+                <tr><th>Symbol</th><th>Type</th><th>Entry</th><th>Qty</th></tr>
+              </thead>
+              <tbody id="bt-positions-body">
+                <tr><td colspan="4" class="text-center opacity-30 py-4">No open positions</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="bt-completed-panel" class="bg-base-200 border border-base-300 rounded-lg hidden">
+        <div class="p-4 border-b border-base-300 flex items-center justify-between">
+          <span class="text-sm font-medium">Backtest Complete</span>
+          <a id="bt-detail-link" href="#" class="btn btn-ghost btn-xs">View Full Details</a>
+        </div>
+        <div class="p-4">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Total PnL</div>
+              <div id="bt-final-pnl" class="text-lg font-mono font-semibold">--</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Return %</div>
+              <div id="bt-final-return" class="text-lg font-mono font-semibold">--</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Win Rate</div>
+              <div id="bt-final-winrate" class="text-lg font-mono font-semibold">--</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Total Trades</div>
+              <div id="bt-final-trades" class="text-lg font-mono font-semibold">--</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Avg Win</div>
+              <div id="bt-final-avgwin" class="text-sm font-mono">--</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Avg Loss</div>
+              <div id="bt-final-avgloss" class="text-sm font-mono">--</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Profit Factor</div>
+              <div id="bt-final-pf" class="text-sm font-mono">--</div>
+            </div>
+            <div class="bg-base-300 rounded-lg p-3">
+              <div class="text-xs opacity-50">Expectancy</div>
+              <div id="bt-final-expectancy" class="text-sm font-mono">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="bt-error-panel" class="hidden">
+        <div role="alert" class="alert alert-error">
+          <span id="bt-error-text">An error occurred</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/backtest.js' %}"></script>
+{% endblock %}

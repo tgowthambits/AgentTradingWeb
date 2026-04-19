@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h1 class="text-lg font-semibold">Dashboard</h1>
+    <span class="text-xs opacity-50">Last updated: now</span>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Saved Configs</div>
+      <div class="text-2xl font-semibold">{{ configs_count }}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Backtest Runs</div>
+      <div class="text-2xl font-semibold">{{ runs_count }}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Active Live Sessions</div>
+      <div class="text-2xl font-semibold">{{ active_sessions.count }}</div>
+    </div>
+    <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+      <div class="text-xs opacity-50 mb-1">Quick Actions</div>
+      <div class="flex flex-wrap gap-2 mt-1">
+        <a href="{% url 'backtest' %}" class="btn btn-primary btn-xs">New Backtest</a>
+        <a href="{% url 'live_trading' %}" class="btn btn-ghost btn-xs">Go Live</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <div class="bg-base-200 border border-base-300 rounded-lg">
+      <div class="p-4 border-b border-base-300 flex items-center justify-between">
+        <span class="text-sm font-medium">Recent Backtest Runs</span>
+        <a href="{% url 'backtest_results' %}" class="text-xs link link-primary">View all</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Status</th>
+              <th>Symbols</th>
+              <th>PnL</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in recent_runs %}
+            <tr>
+              <td><a href="{% url 'backtest_detail' run.pk %}" class="link link-hover">#{{ run.pk }}</a></td>
+              <td>
+                {% if run.status == "completed" %}
+                  <span class="badge badge-success badge-xs">completed</span>
+                {% elif run.status == "running" %}
+                  <span class="badge badge-warning badge-xs">running</span>
+                {% elif run.status == "failed" %}
+                  <span class="badge badge-error badge-xs">failed</span>
+                {% else %}
+                  <span class="badge badge-ghost badge-xs">{{ run.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-xs max-w-40 truncate">{{ run.symbols|join:", " }}</td>
+              <td>
+                {% if run.summary_json %}
+                  <span class="{% if run.summary_json.total_pnl >= 0 %}pnl-positive{% else %}pnl-negative{% endif %} text-sm font-mono">
+                    {{ run.summary_json.total_pnl }}
+                  </span>
+                {% else %}
+                  <span class="opacity-30">--</span>
+                {% endif %}
+              </td>
+              <td class="text-xs opacity-60">{{ run.created_at|date:"M d, H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center opacity-40 py-8">No backtest runs yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bg-base-200 border border-base-300 rounded-lg">
+      <div class="p-4 border-b border-base-300 flex items-center justify-between">
+        <span class="text-sm font-medium">Active Live Sessions</span>
+        <a href="{% url 'live_trading' %}" class="text-xs link link-primary">View all</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Status</th>
+              <th>Symbols</th>
+              <th>PnL</th>
+              <th>Trades</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in active_sessions %}
+            <tr>
+              <td>#{{ s.pk }}</td>
+              <td><span class="badge badge-warning badge-xs">{{ s.status }}</span></td>
+              <td class="text-xs max-w-40 truncate">{{ s.symbols|join:", " }}</td>
+              <td class="font-mono text-sm {% if s.total_pnl >= 0 %}pnl-positive{% else %}pnl-negative{% endif %}">{{ s.total_pnl }}</td>
+              <td>{{ s.total_trades }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center opacity-40 py-8">No active sessions</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

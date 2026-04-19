@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Chart - {{SYMBOL}}</title>
+    <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #131722;
+            color: #d1d4dc;
+            overflow: hidden;
+        }
+        #header {
+            padding: 15px 20px;
+            background-color: #1e222d;
+            border-bottom: 1px solid #2a2e39;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #symbol-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+        #stats {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .stat-label {
+            color: #787b86;
+            font-size: 11px;
+        }
+        .stat-value {
+            color: #fff;
+            font-weight: 500;
+        }
+        .positive {
+            color: #26a69a !important;
+        }
+        .negative {
+            color: #ef5350 !important;
+        }
+        #chart-container {
+            width: 100%;
+            height: calc(100vh - 70px);
+            position: relative;
+        }
+        #legend {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: rgba(30, 34, 45, 0.9);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            border: 1px solid #2a2e39;
+            z-index: 10;
+            max-width: 300px;
+        }
+        .legend-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+        .legend-label {
+            color: #787b86;
+        }
+        .legend-value {
+            color: #fff;
+            font-weight: 500;
+        }
+    #trade-info {
+        position: absolute;
+        top: 230px;
+        left: 20px;
+        background: rgba(30, 34, 45, 0.95);
+        padding: 12px 15px;
+        border-radius: 5px;
+        font-size: 11px;
+        border: 1px solid #2a2e39;
+        z-index: 10;
+        max-width: 280px;
+        display: none;
+    }
+    #trade-info.visible {
+        display: block;
+    }
+    .trade-marker {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    .buy-marker {
+        background-color: #26a69a;
+    }
+    .sell-marker {
+        background-color: #ef5350;
+    }
+    .trade-detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+        padding: 2px 0;
+    }
+    .trade-detail-label {
+        color: #787b86;
+    }
+    .trade-detail-value {
+        color: #fff;
+        font-weight: 500;
+    }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div id="symbol-name">{{SYMBOL}}</div>
+        <div id="stats">
+            <div class="stat-item">
+                <span class="stat-label">Total Trades</span>
+                <span class="stat-value" id="total-trades">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Win Rate</span>
+                <span class="stat-value" id="win-rate">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Total PnL</span>
+                <span class="stat-value" id="total-pnl">₹0.00</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="legend">
+        <div class="legend-row">
+            <span class="legend-label">O</span>
+            <span class="legend-value" id="legend-o">-</span>
+        </div>
+        <div class="legend-row">
+            <span class="legend-label">H</span>
+            <span class="legend-value" id="legend-h">-</span>
+        </div>
+        <div class="legend-row">
+            <span class="legend-label">L</span>
+            <span class="legend-value" id="legend-l">-</span>
+        </div>
+        <div class="legend-row">
+            <span class="legend-label">C</span>
+            <span class="legend-value" id="legend-c">-</span>
+        </div>
+        <div class="legend-row">
+            <span class="legend-label">V</span>
+            <span class="legend-value" id="legend-v">-</span>
+        </div>
+    </div>
+    
+    <div id="trade-info">
+        <div style="margin-bottom: 8px; font-weight: 600; color: #fff; border-bottom: 1px solid #2a2e39; padding-bottom: 5px;">
+            Trade Details
+        </div>
+        <div id="trade-details-content">
+            <!-- Dynamic trade details will appear here -->
+        </div>
+    </div>
+    
+    <div id="chart-container"></div>
+
+    <script>
+        // Data from Python (will be injected)
+        const candleData = {{CANDLE_DATA}};
+        const tradeMarkers = {{TRADE_MARKERS}};
+        const symbolStats = {{SYMBOL_STATS}};
+        const tradeData = {{TRADE_DATA}};
+        
+        // Global references for updates
+        let chart = null;
+        let candleSeries = null;
+        let volumeSeries = null;
+        let tradesByTime = {};
+
+        // Create chart
+        const chartContainer = document.getElementById('chart-container');
+        chart = LightweightCharts.createChart(chartContainer, {
+            width: chartContainer.clientWidth,
+            height: chartContainer.clientHeight,
+            layout: {
+                background: { color: '#131722' },
+                textColor: '#d1d4dc',
+            },
+            grid: {
+                vertLines: { color: '#2a2e39' },
+                horzLines: { color: '#2a2e39' },
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+            },
+            rightPriceScale: {
+                borderColor: '#2a2e39',
+                scaleMargins: {
+                    top: 0.1,
+                    bottom: 0.3,
+                },
+            },
+            timeScale: {
+                borderColor: '#2a2e39',
+                timeVisible: true,
+                secondsVisible: true,
+            },
+        });
+
+        // Add candlestick series
+        candleSeries = chart.addCandlestickSeries({
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderDownColor: '#ef5350',
+            borderUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+            wickUpColor: '#26a69a',
+        });
+
+        // Add volume series
+        volumeSeries = chart.addHistogramSeries({
+            color: '#26a69a',
+            priceFormat: {
+                type: 'volume',
+            },
+            priceScaleId: 'volume',
+        });
+
+        chart.priceScale('volume').applyOptions({
+            scaleMargins: {
+                top: 0.7,
+                bottom: 0.0,
+            },
+        });
+
+        // Set data
+        candleSeries.setData(candleData);
+        
+        // Prepare volume data
+        const volumeData = candleData.map(candle => ({
+            time: candle.time,
+            value: candle.volume || 0,
+            color: candle.close >= candle.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
+        }));
+        volumeSeries.setData(volumeData);
+
+        // Add trade markers
+        if (tradeMarkers && tradeMarkers.length > 0) {
+            candleSeries.setMarkers(tradeMarkers);
+        }
+
+        // Update stats
+        if (symbolStats) {
+            document.getElementById('total-trades').textContent = symbolStats.totalTrades || 0;
+            document.getElementById('win-rate').textContent = 
+                symbolStats.winRate ? symbolStats.winRate.toFixed(1) + '%' : '0%';
+            
+            const pnlElement = document.getElementById('total-pnl');
+            const pnl = symbolStats.totalPnL || 0;
+            pnlElement.textContent = '₹' + pnl.toFixed(2);
+            pnlElement.classList.add(pnl >= 0 ? 'positive' : 'negative');
+        }
+
+        // Create a map of timestamps to trades for quick lookup
+        if (tradeData && tradeData.length > 0) {
+            tradeData.forEach(trade => {
+                // Store both entry and exit
+                if (trade.entry_time) {
+                    if (!tradesByTime[trade.entry_time]) {
+                        tradesByTime[trade.entry_time] = [];
+                    }
+                    tradesByTime[trade.entry_time].push({type: 'entry', trade: trade});
+                }
+                if (trade.exit_time) {
+                    if (!tradesByTime[trade.exit_time]) {
+                        tradesByTime[trade.exit_time] = [];
+                    }
+                    tradesByTime[trade.exit_time].push({type: 'exit', trade: trade});
+                }
+            });
+        }
+
+        function getTradeDisplayTime(trade, timeField) {
+            // Always use the trade's actual execution time from backend
+            if (trade[timeField]) {
+                return new Date(trade[timeField] * 1000).toLocaleTimeString();
+            }
+            return 'N/A';
+        }
+
+        // Update legend and trade info on crosshair move
+        chart.subscribeCrosshairMove((param) => {
+            const tradeInfoDiv = document.getElementById('trade-info');
+            const tradeDetailsContent = document.getElementById('trade-details-content');
+            
+            if (param.time) {
+                const data = param.seriesData.get(candleSeries);
+                if (data) {
+                    document.getElementById('legend-o').textContent = data.open.toFixed(2);
+                    document.getElementById('legend-h').textContent = data.high.toFixed(2);
+                    document.getElementById('legend-l').textContent = data.low.toFixed(2);
+                    document.getElementById('legend-c').textContent = data.close.toFixed(2);
+                    
+                    const volumeData = param.seriesData.get(volumeSeries);
+                    if (volumeData) {
+                        document.getElementById('legend-v').textContent = 
+                            volumeData.value ? volumeData.value.toLocaleString() : '-';
+                    }
+                }
+                
+                // Check if there are trades at this timestamp
+                const tradesAtTime = tradesByTime[param.time];
+                if (tradesAtTime && tradesAtTime.length > 0) {
+                    let html = '';
+                    tradesAtTime.forEach(({type, trade}) => {
+                        if (type === 'entry') {
+                            html += `
+                                <div style="background: rgba(38, 166, 154, 0.1); padding: 8px; margin-bottom: 8px; border-radius: 3px; border-left: 3px solid #26a69a;">
+                                    <div style="font-weight: 600; color: #26a69a; margin-bottom: 5px;">📈 BUY ENTRY</div>
+                                    <div class="trade-detail-row">
+                                        <span class="trade-detail-label">Price:</span>
+                                        <span class="trade-detail-value">₹${trade.entry_price.toFixed(2)}</span>
+                                    </div>
+                                    <div class="trade-detail-row">
+                                        <span class="trade-detail-label">Quantity:</span>
+                                        <span class="trade-detail-value">${trade.quantity}</span>
+                                    </div>
+                                    <div class="trade-detail-row">
+                                        <span class="trade-detail-label">Time:</span>
+                                        <span class="trade-detail-value">${getTradeDisplayTime(trade, 'entry_time')}</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            const pnlColor = trade.pnl >= 0 ? '#26a69a' : '#ef5350';
+                            const pnlSign = trade.pnl >= 0 ? '+' : '';
+                            html += `
+                                <div style="background: rgba(239, 83, 80, 0.1); padding: 8px; margin-bottom: 8px; border-radius: 3px; border-left: 3px solid ${pnlColor};">
+                                    <div style="font-weight: 600; color: ${pnlColor}; margin-bottom: 5px;">📉 SELL EXIT</div>
+                                    <div class="trade-detail-row">
+                                        <span class="trade-detail-label">Price:</span>
+                                        <span class="trade-detail-value">₹${trade.exit_price.toFixed(2)}</span>
+                                    </div>
+                                    <div class="trade-detail-row">
+                                        <span class="trade-detail-label">PnL:</span>
+                                        <span class="trade-detail-value" style="color: ${pnlColor};">${pnlSign}₹${trade.pnl.toFixed(2)}</span>
+                                    </div>
+                                    <div class="trade-detail-row">
+                                        <span class="trade-detail-label">Reason:</span>
+                                        <span class="trade-detail-value">${trade.exit_reason}</span>
+                                    </div>
+                                    <div class="trade-detail-row">
+                                        <span class="trade-detail-label">Time:</span>
+                                        <span class="trade-detail-value">${getTradeDisplayTime(trade, 'exit_time')}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                    tradeDetailsContent.innerHTML = html;
+                    tradeInfoDiv.classList.add('visible');
+                } else {
+                    tradeInfoDiv.classList.remove('visible');
+                }
+            } else {
+                tradeInfoDiv.classList.remove('visible');
+            }
+        });
+
+        // Handle window resize with debouncing for better performance
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const newWidth = chartContainer.clientWidth;
+                const newHeight = chartContainer.clientHeight;
+                
+                if (newWidth > 0 && newHeight > 0) {
+                    chart.applyOptions({
+                        width: newWidth,
+                        height: newHeight,
+                    });
+                    
+                    // Fit content after resize
+                    chart.timeScale().fitContent();
+                }
+            }, 100);
+        });
+        
+        // Handle visibility change (when switching tabs or minimizing)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                setTimeout(() => {
+                    const newWidth = chartContainer.clientWidth;
+                    const newHeight = chartContainer.clientHeight;
+                    
+                    if (newWidth > 0 && newHeight > 0) {
+                        chart.applyOptions({
+                            width: newWidth,
+                            height: newHeight,
+                        });
+                    }
+                }, 100);
+            }
+        });
+
+        // Fit content
+        chart.timeScale().fitContent();
+    </script>
+</body>
+</html>

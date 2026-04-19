@@ -1,0 +1,12 @@
+pandas
+numpy
+hmmlearn
+xgboost
+stable-baselines3
+gym
+pyyaml
+rich
+scikit-learn
+tabulate
+loguru
+colorama

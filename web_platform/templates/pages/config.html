@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Configuration - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h1 class="text-lg font-semibold">Configuration</h1>
+    <div class="flex gap-2 flex-wrap">
+      <button id="btn-save-config" class="btn btn-primary btn-sm">Save as Preset</button>
+      <button id="btn-load-default" class="btn btn-ghost btn-sm">Reset to Default</button>
+    </div>
+  </div>
+
+  <div class="flex items-end gap-3 flex-wrap">
+    <fieldset class="fieldset flex-1 min-w-[200px]">
+      <legend class="fieldset-legend text-xs">Load Saved Config</legend>
+      <select id="cfg-preset-select" class="select select-sm w-full">
+        <option value="">-- Select a saved preset --</option>
+        {% for c in saved_configs %}
+        <option value="{{ c.pk }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+    <button id="btn-load-preset" class="btn btn-ghost btn-sm">Load</button>
+  </div>
+
+  <div role="tablist" class="tabs tabs-border overflow-x-auto flex-nowrap">
+    <input type="radio" name="config_tabs" class="tab" aria-label="Symbols" checked="checked" />
+    <div role="tabpanel" class="tab-content p-4">
+      <div class="flex flex-col gap-4">
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend text-xs">Trading Symbols</legend>
+          <textarea id="cfg-symbols" class="textarea textarea-sm w-full" rows="4" placeholder="One per line, e.g. NSE:NIFTY2642124250PE">{% for s in config.symbols %}{{ s }}
+{% endfor %}</textarea>
+          <p class="label text-xs">Enter one symbol per line. These will be used for both live and backtest.</p>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend text-xs">Lot Sizes (JSON)</legend>
+          <textarea id="cfg-lot-sizes" class="textarea textarea-sm w-full font-mono" rows="4">{{ config.lot_sizes|default:"{}"|safe }}</textarea>
+        </fieldset>
+      </div>
+    </div>
+
+    <input type="radio" name="config_tabs" class="tab" aria-label="Indicators" />
+    <div role="tabpanel" class="tab-content p-4">
+      <div class="flex flex-col gap-3" id="cfg-indicators-container">
+        {% for name, ind in config.indicators.items %}
+        <div class="bg-base-300 border border-base-300 rounded-lg p-3" data-indicator="{{ name }}">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" class="toggle toggle-sm toggle-primary ind-toggle"
+                     data-name="{{ name }}" {% if ind.enabled %}checked{% endif %} />
+              <span class="text-sm font-medium">{{ name }}</span>
+            </div>
+            <span class="text-xs font-mono opacity-50">weight: {{ ind.weight|default:"1.0" }}</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 ind-params">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-xs">Weight</legend>
+              <input type="number" step="0.1" class="input input-xs w-full font-mono"
+                     data-param="weight" value="{{ ind.weight|default:'1.0' }}">
+            </fieldset>
+            {% for pname, pval in ind.items %}
+              {% if pname != "enabled" and pname != "weight" and pname != "module" and pname != "class_name" and pname != "signals" %}
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend text-xs">{{ pname }}</legend>
+                <input type="text" class="input input-xs w-full font-mono"
+                       data-param="{{ pname }}" value="{{ pval }}">
+              </fieldset>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <input type="radio" name="config_tabs" class="tab" aria-label="Risk Mgmt" />
+    <div role="tabpanel" class="tab-content p-4">
+      <div class="flex flex-col gap-4">
+        {% with risk=config.risk_management %}
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Risk Per Trade %</legend>
+            <input type="number" step="0.1" id="cfg-risk-pct" class="input input-sm w-full"
+                   value="{{ risk.risk_per_trade_pct|default:'2.0' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Max Position Size</legend>
+            <input type="number" id="cfg-max-pos-size" class="input input-sm w-full"
+                   value="{{ risk.max_position_size|default:'10000' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Max Positions</legend>
+            <input type="number" id="cfg-max-positions" class="input input-sm w-full"
+                   value="{{ risk.max_positions|default:'2' }}">
+          </fieldset>
+        </div>
+
+        <div class="text-sm font-medium mt-2">Stop Loss</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Method</legend>
+            <select id="cfg-sl-method" class="select select-sm w-full">
+              <option value="fixed_amount" {% if risk.stop_loss.method == "fixed_amount" %}selected{% endif %}>Fixed Amount</option>
+              <option value="atr" {% if risk.stop_loss.method == "atr" %}selected{% endif %}>ATR</option>
+              <option value="percentage" {% if risk.stop_loss.method == "percentage" %}selected{% endif %}>Percentage</option>
+            </select>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Max Loss Per Trade</legend>
+            <input type="number" id="cfg-sl-max-loss" class="input input-sm w-full"
+                   value="{{ risk.stop_loss.max_loss_per_trade|default:'2000' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">ATR Multiplier</legend>
+            <input type="number" step="0.1" id="cfg-sl-atr" class="input input-sm w-full"
+                   value="{{ risk.stop_loss.atr_multiplier|default:'1.5' }}">
+          </fieldset>
+        </div>
+
+        <div class="text-sm font-medium mt-2">Profit Targets</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Enabled</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-pt-enabled"
+                   {% if risk.profit_targets.enabled %}checked{% endif %}>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Target 1 Ratio</legend>
+            <input type="number" step="0.1" id="cfg-pt1-ratio" class="input input-sm w-full"
+                   value="{{ risk.profit_targets.target_1.ratio|default:'2.0' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Target 1 Exit %</legend>
+            <input type="number" step="1" id="cfg-pt1-pct" class="input input-sm w-full"
+                   value="{{ risk.profit_targets.target_1.exit_pct|default:'70' }}">
+          </fieldset>
+        </div>
+
+        <div class="text-sm font-medium mt-2">Trailing Stop</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Enabled</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-ts-enabled"
+                   {% if risk.trailing_stop.enabled %}checked{% endif %}>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Activation Ratio</legend>
+            <input type="number" step="0.01" id="cfg-ts-activation" class="input input-sm w-full"
+                   value="{{ risk.trailing_stop.activation_ratio|default:'1.05' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Trail ATR Multiplier</legend>
+            <input type="number" step="0.1" id="cfg-ts-trail" class="input input-sm w-full"
+                   value="{{ risk.trailing_stop.trail_atr_multiplier|default:'1.5' }}">
+          </fieldset>
+        </div>
+
+        <div class="text-sm font-medium mt-2">Daily Limits</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Max Loss Amount</legend>
+            <input type="number" id="cfg-daily-max-loss" class="input input-sm w-full"
+                   value="{{ risk.daily_limits.max_loss_amount|default:'4000' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Max Trades/Day</legend>
+            <input type="number" id="cfg-daily-max-trades" class="input input-sm w-full"
+                   value="{{ risk.daily_limits.max_trades_per_day|default:'15' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Max Positions</legend>
+            <input type="number" id="cfg-daily-max-pos" class="input input-sm w-full"
+                   value="{{ risk.daily_limits.max_positions|default:'2' }}">
+          </fieldset>
+        </div>
+
+        <div class="text-sm font-medium mt-2">Time Exit</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Enabled</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-te-enabled"
+                   {% if risk.time_exit.enabled %}checked{% endif %}>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Max Hold (min)</legend>
+            <input type="number" id="cfg-te-hold" class="input input-sm w-full"
+                   value="{{ risk.time_exit.max_hold_minutes|default:'30' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Force Close EOD</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-te-eod"
+                   {% if risk.time_exit.force_close_eod %}checked{% endif %}>
+          </fieldset>
+        </div>
+
+        {% endwith %}
+      </div>
+    </div>
+
+    <input type="radio" name="config_tabs" class="tab" aria-label="Trading" />
+    <div role="tabpanel" class="tab-content p-4">
+      <div class="flex flex-col gap-4">
+        {% with trading=config.trading %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Default Quantity</legend>
+            <input type="number" id="cfg-default-qty" class="input input-sm w-full"
+                   value="{{ trading.default_quantity|default:'20' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Refresh Interval (s)</legend>
+            <input type="number" id="cfg-refresh" class="input input-sm w-full"
+                   value="{{ trading.refresh_interval|default:'60' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Aggregation</legend>
+            <select id="cfg-agg-strategy" class="select select-sm w-full">
+              <option value="majority" {% if config.aggregation_strategy == "majority" %}selected{% endif %}>Majority</option>
+              <option value="weighted" {% if config.aggregation_strategy == "weighted" %}selected{% endif %}>Weighted</option>
+              <option value="unanimous" {% if config.aggregation_strategy == "unanimous" %}selected{% endif %}>Unanimous</option>
+              <option value="conservative" {% if config.aggregation_strategy == "conservative" %}selected{% endif %}>Conservative</option>
+              <option value="threshold" {% if config.aggregation_strategy == "threshold" %}selected{% endif %}>Threshold</option>
+            </select>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Lookback Bars</legend>
+            <input type="number" min="0" step="1" id="cfg-trading-lookback" class="input input-sm w-full"
+                   value="{{ trading.lookback_bars|default:'0' }}">
+            <p class="label text-xs opacity-60">0 = unlimited</p>
+          </fieldset>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Allow Buy</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-allow-buy"
+                   {% if trading.allow_buy %}checked{% endif %}>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Allow Sell</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-allow-sell"
+                   {% if trading.allow_sell %}checked{% endif %}>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Paper Trading</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-paper"
+                   {% if trading.paper_trading %}checked{% endif %}>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Auto Trade</legend>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="cfg-auto-trade"
+                   {% if trading.auto_trade %}checked{% endif %}>
+          </fieldset>
+        </div>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend text-xs">Min Agreement</legend>
+          <input type="range" min="0" max="100" id="cfg-min-agreement" class="range range-sm range-primary"
+                 value="{{ config.min_agreement|default:'0.7' }}">
+          <div class="flex justify-between text-xs opacity-50 px-1">
+            <span>0%</span>
+            <span id="cfg-min-agreement-val">{{ config.min_agreement|default:'0.7' }}</span>
+            <span>100%</span>
+          </div>
+        </fieldset>
+        {% endwith %}
+      </div>
+    </div>
+
+    <input type="radio" name="config_tabs" class="tab" aria-label="Backtest" />
+    <div role="tabpanel" class="tab-content p-4">
+      <div class="flex flex-col gap-4">
+        {% with bt=config.backtest %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Initial Capital</legend>
+            <input type="number" id="cfg-bt-capital" class="input input-sm w-full"
+                   value="{{ bt.initial_capital|default:'200000' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Entry Slippage</legend>
+            <input type="number" step="0.01" id="cfg-bt-entry-slip" class="input input-sm w-full"
+                   value="{{ bt.entry_slippage|default:'0.05' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Exit Slippage</legend>
+            <input type="number" step="0.01" id="cfg-bt-exit-slip" class="input input-sm w-full"
+                   value="{{ bt.exit_slippage|default:'0.05' }}">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Lookback Bars</legend>
+            <input type="number" min="0" step="1" id="cfg-bt-lookback" class="input input-sm w-full"
+                   value="{{ bt.lookback_bars|default:'0' }}">
+            <p class="label text-xs opacity-60">0 = unlimited; e.g. 400 speeds up iterations</p>
+          </fieldset>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Speed</legend>
+            <select id="cfg-bt-speed" class="select select-sm w-full">
+              <option value="fast" {% if bt.speed == "fast" %}selected{% endif %}>Fast</option>
+              <option value="normal" {% if bt.speed == "normal" %}selected{% endif %}>Normal</option>
+              <option value="slow" {% if bt.speed == "slow" %}selected{% endif %}>Slow</option>
+            </select>
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Default Resolution</legend>
+            <input type="text" id="cfg-bt-resolution" class="input input-sm w-full"
+                   value="{{ bt.resolution|default:'5S' }}">
+          </fieldset>
+        </div>
+        {% endwith %}
+      </div>
+    </div>
+  </div>
+
+  <dialog id="save-config-modal" class="modal">
+    <div class="modal-box">
+      <h3 class="text-base font-medium mb-4">Save Configuration Preset</h3>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend text-xs">Preset Name</legend>
+        <input type="text" id="save-config-name" class="input input-sm w-full" placeholder="e.g. NIFTY Intraday Scalper">
+      </fieldset>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn btn-ghost btn-sm">Cancel</button>
+        </form>
+        <button id="btn-confirm-save" class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+  </dialog>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/config.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,202 @@
+symbols:
+- NSE:NIFTY26JAN25150PE
+- NSE:NIFTY26JAN25150CE
+- BSE:SENSEX2612281900PE
+- BSE:SENSEX2612281900CE
+lot_sizes:
+  NSE:NIFTY26JAN25150PE: 20
+  NSE:NIFTY26JAN25150CE: 20
+  BSE:SENSEX2612281900PE: 35
+  BSE:SENSEX2612281900CE: 35
+  NSE:FINNIFTY26JAN27600PE: 25
+  NSE:FINNIFTY26JAN27600CE: 25
+  NSE:BANKNIFTY26JAN59600PE: 30
+  NSE:BANKNIFTY26JAN59600CE: 30
+  default: 35
+date_range:
+  start_date: '2026-01-21 16:15:00'
+  end_date: '2026-01-23 16:15:00'
+  resolution: 30S
+resolution: 30S
+aggregation_strategy: weighted
+min_agreement: 0.6
+indicators:
+  rsi:
+    enabled: true
+    weight: 1.0
+    period: 14
+    oversold: 30
+    overbought: 70
+  ma_crossover:
+    enabled: true
+    weight: 1.5
+    fast_period: 50
+    slow_period: 200
+    ma_type: sma
+  macd:
+    enabled: true
+    weight: 1.2
+    fast_period: 12
+    slow_period: 26
+    signal_period: 9
+  bollinger_bands:
+    enabled: true
+    weight: 0.8
+    period: 20
+    std_dev: 2.0
+  mystic_pulse:
+    enabled: true
+    weight: 1.5
+  super_regression:
+    enabled: true
+    weight: 1.0
+    len: 20
+    mult: 2.0
+    source: low
+trading:
+  default_quantity: 600
+  enable_auto_trading: true
+  refresh_interval: 60
+  slow_refresh_interval: 15
+  fast_refresh_interval: 3
+  allow_buy: true
+  allow_sell: false
+  live_mode: true
+  paper_trading: true
+  auto_trade: true
+  lot_sizes:
+    NSE:NIFTY26JAN25150PE: 20
+    NSE:NIFTY26JAN25150CE: 20
+    BSE:SENSEX2612281900PE: 35
+    BSE:SENSEX2612281900CE: 35
+    NSE:FINNIFTY26JAN27600PE: 25
+    NSE:FINNIFTY26JAN27600CE: 25
+    NSE:BANKNIFTY26JAN59600PE: 30
+    NSE:BANKNIFTY26JAN59600CE: 30
+  default_lot_size: 35
+output:
+  results_csv: results/trading_results.csv
+  verbose: true
+backtest:
+  enabled: false
+  start_date: '2026-01-21'
+  end_date: '2026-01-22'
+  initial_capital: 200000.0
+  speed: fast
+  resolution: 30S
+  entry_slippage: 0.05
+  exit_slippage: 0.05
+broker:
+  enabled: true
+  type: paper
+  broker_name: zerodha
+  api_key: ''
+  api_secret: ''
+  access_token: ''
+  user_id: ''
+risk_management:
+  risk_per_trade_pct: 2.0
+  max_position_size: 2000
+  capital_percentage_per_trade_intraday: 70.0
+  capital_percentage_per_trade_backtest: 80.0
+  stop_loss:
+    method: fixed_amount
+    max_loss_per_trade: 500.0
+    atr_multiplier: 1.5
+    min_stop_pct: 0.8
+    max_stop_pct: 3.0
+    breakeven_enabled: false
+    breakeven_trigger_ratio: 1.05
+  profit_targets:
+    enabled: true
+    target_1:
+      ratio: 1.2
+      exit_pct: 80.0
+    target_2:
+      ratio: 2.0
+      exit_pct: 50.0
+    target_3:
+      ratio: 3.0
+      exit_pct: 20.0
+    reversal:
+      enabled: true
+      atr_multiplier: 0.5
+      percent_threshold: 1.0
+  trailing_stop:
+    enabled: true
+    activation_ratio: 1.05
+    trail_atr_multiplier: 1.5
+  time_exit:
+    enabled: false
+    max_hold_minutes: 60
+    force_close_eod: true
+  daily_limits:
+    max_loss_amount: 4000
+    max_trades_per_day: 300
+    max_positions: 3
+  paper_trading_mode:
+    enabled: true
+    consecutive_losses_trigger: 5
+    exit_on_paper_profit: true
+  loss_recovery:
+    enabled: false
+    max_multiplier: 3.0
+    recovery_priority: false
+  partial_exits:
+    enabled: false
+  profit_reversal_protection:
+    enabled: true
+    min_profit: 100.0
+    reversal_threshold: 50.0
+    atr_multiplier: 1.0
+  profit_drop_protection:
+    enabled: true
+    drop_percentage: 1.0
+  max_positions: 1000
+  stop_loss_pct: 0.8
+  daily_loss_limit: 10000.0
+  unrealized_profit_drop:
+    enabled: true
+    percent_threshold: 1.0
+  below_avg_profit_exit:
+    enabled: false
+    min_profit: 80.0
+  candle_closure_exit:
+    enabled: false
+    resolution: 30S
+    loss_limit: 500.0
+volatility:
+  calculation_method: garman_klass
+  atr_period: 14
+  lookback_period: 20
+  regime_thresholds:
+    low: 0.5
+    high: 2.0
+quant_indicators:
+  order_flow_imbalance:
+    enabled: true
+    threshold: 0.3
+  vwap_deviation:
+    enabled: true
+    std_threshold: 2.0
+    use_for_entry: true
+    use_for_exit: true
+  kalman_filter:
+    enabled: true
+    process_noise: 0.01
+    measurement_noise: 1.0
+    use_for_trend: true
+  hurst_exponent:
+    enabled: true
+    window: 100
+    strategy_switch: true
+    mean_revert_threshold: 0.45
+    trending_threshold: 0.55
+  entropy:
+    enabled: true
+    bins: 50
+    high_threshold: 4.0
+  microstructure:
+    enabled: true
+    detect_reversals: true
+    volume_spike_threshold: 0.8

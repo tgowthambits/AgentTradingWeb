@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Live Trading - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h1 class="text-lg font-semibold">Live Trading</h1>
+    <div class="flex items-center gap-2">
+      <span id="live-indicator" class="status status-sm status-neutral"></span>
+      <span id="live-status-text" class="text-xs opacity-50">Idle</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-1 flex flex-col gap-4">
+
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="text-sm font-medium mb-3">Session Configuration</div>
+
+        <form id="live-form" class="flex flex-col gap-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Symbols</legend>
+            <textarea id="live-symbols" class="textarea textarea-sm w-full" rows="3" placeholder="One symbol per line">{% for s in symbols %}{{ s }}
+{% endfor %}</textarea>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend text-xs">Config Preset</legend>
+            <select id="live-config" class="select select-sm w-full">
+              <option value="">Use default (YAML)</option>
+              {% for c in configs %}
+              <option value="{{ c.pk }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </fieldset>
+
+          <div class="flex flex-wrap gap-2 mt-2">
+            <button type="submit" id="btn-start-live" class="btn btn-primary btn-sm flex-1 min-w-24">
+              Start Session
+            </button>
+            <button type="button" id="btn-pause-live" class="btn btn-ghost btn-sm flex-1 min-w-24 hidden">
+              Pause
+            </button>
+            <button type="button" id="btn-resume-live" class="btn btn-ghost btn-sm flex-1 min-w-24 hidden">
+              Resume
+            </button>
+            <button type="button" id="btn-stop-live" class="btn btn-error btn-sm flex-1 min-w-24 hidden">
+              Stop
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-medium">Recent Sessions</span>
+          <a href="{% url 'live_sessions' %}" class="link link-hover text-xs opacity-70">View all →</a>
+        </div>
+        <div class="flex flex-col gap-2">
+          {% for s in sessions %}
+          <a href="{% url 'live_session_detail' s.pk %}" class="flex items-center justify-between text-xs bg-base-300 rounded-lg px-3 py-2 hover:bg-base-100 transition-colors">
+            <span>#{{ s.pk }}</span>
+            {% if s.status == "running" %}
+              <span class="badge badge-warning badge-xs">running</span>
+            {% elif s.status == "stopped" %}
+              <span class="badge badge-ghost badge-xs">stopped</span>
+            {% else %}
+              <span class="badge badge-ghost badge-xs">{{ s.status }}</span>
+            {% endif %}
+            <span class="font-mono {% if s.total_pnl >= 0 %}pnl-positive{% else %}pnl-negative{% endif %}">
+              {{ s.total_pnl }}
+            </span>
+          </a>
+          {% empty %}
+          <div class="text-xs opacity-40 text-center py-4">No sessions yet</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 flex flex-col gap-4">
+
+      <div class="bg-base-200 border border-base-300 rounded-lg">
+        <div class="flex items-center justify-between p-3 border-b border-base-300 flex-wrap gap-2">
+          <span class="text-sm font-medium">Charts</span>
+          <div id="live-layout-picker"></div>
+        </div>
+        <div id="live-chart-grid" class="p-2 gap-2" style="display: grid;"></div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+          <div class="text-xs opacity-50">Total PnL</div>
+          <div id="live-pnl" class="text-xl font-mono font-semibold">0.00</div>
+        </div>
+        <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+          <div class="text-xs opacity-50">Trades</div>
+          <div id="live-trades" class="text-xl font-mono font-semibold">0</div>
+        </div>
+        <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+          <div class="text-xs opacity-50">Iteration</div>
+          <div id="live-iteration" class="text-xl font-mono font-semibold">0</div>
+        </div>
+        <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+          <div class="text-xs opacity-50">Session ID</div>
+          <div id="live-session-id" class="text-xl font-mono font-semibold">--</div>
+        </div>
+      </div>
+
+      <div class="bg-base-200 border border-base-300 rounded-lg">
+        <div class="p-4 border-b border-base-300">
+          <span class="text-sm font-medium">Live Signals</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table table-xs">
+            <thead>
+              <tr><th>Symbol</th><th>Signal</th><th>Price</th><th>Time</th></tr>
+            </thead>
+            <tbody id="live-signals-body">
+              <tr><td colspan="4" class="text-center opacity-30 py-8">Waiting for signals...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-base-200 border border-base-300 rounded-lg">
+        <div class="p-4 border-b border-base-300">
+          <span class="text-sm font-medium">Activity Log</span>
+        </div>
+        <div id="live-log" class="p-4 max-h-64 overflow-y-auto font-mono text-xs flex flex-col gap-1">
+          <div class="opacity-30">Session log will appear here...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/live_trading.js' %}"></script>
+{% endblock %}

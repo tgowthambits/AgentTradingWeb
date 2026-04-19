@@ -1,0 +1,61 @@
+hmm:
+  n_regimes: 3
+vomc:
+  buy_threshold: 0.3
+  sell_threshold: 0.7
+daily_features:
+- sma_5
+- sma_20
+- volatility
+- daily_return
+intraday_features:
+- return
+# Trading parameters
+trading:
+  stop_loss_amount: 2.0  # Stop loss amount in ₹ per order
+
+rl:
+  # Observation window for RL agent (number of periods to analyze)
+  window: 10
+  
+  # Path to trained PPO model (null = use rule-based prediction)
+  model_path: null
+  
+  # Number of consecutive SELL signals to trigger immediate sell
+  sell_threshold: 3
+  
+  # Rule-based prediction parameters (used when model_path is null)
+  rule_based:
+    # Recent trend analysis window (last N periods)
+    recent_window: 10
+    
+    # BUY signal thresholds
+    buy_recent_threshold: 0.7   # Recent uptrend threshold (0-1)
+    buy_overall_threshold: 0.6   # Overall uptrend threshold (0-1)
+    
+    # SELL signal thresholds
+    sell_recent_threshold: 0.5   # Recent downtrend threshold (0-1)
+    sell_overall_threshold: 0.55  # Overall downtrend threshold (0-1)
+filters:
+  volatility_threshold: 0.01
+  use_sma50_200: true
+  breakout_lookback: 20
+  rsi_buy: 55
+  rsi_sell: 45
+  confidence_threshold: 0.41
+  min_confirmations: 1
+  selected_filters:
+    buy:
+      use_volatility: true
+      use_confidence: true
+      use_trend: true
+      use_breakout: true
+      use_momentum: true
+      require_all: true
+    sell:
+      use_volatility: true
+      use_confidence: true
+      use_trend: true
+      use_breakout: true
+      use_momentum: true
+      require_all: true

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Backtest Results - Trading Platform{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h1 class="text-lg font-semibold">Saved Backtest Results</h1>
+    <div class="flex items-center gap-3 flex-wrap">
+      <span id="runs-updated" class="text-xs opacity-50">Loading...</span>
+      <button type="button" id="btn-refresh-runs" class="btn btn-ghost btn-xs">Refresh</button>
+      <a href="{% url 'backtest' %}" class="btn btn-primary btn-sm">New Backtest</a>
+    </div>
+  </div>
+
+  <div class="bg-base-200 border border-base-300 rounded-lg">
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Symbols</th>
+            <th>Date Range</th>
+            <th>Resolution</th>
+            <th>Progress</th>
+            <th>Trades</th>
+            <th>PnL</th>
+            <th>Return %</th>
+            <th>Win Rate</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="runs-table-body">
+          <tr><td colspan="12" class="text-center opacity-40 py-8">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const tbody = document.getElementById("runs-table-body");
+  const updatedEl = document.getElementById("runs-updated");
+  const btnRefresh = document.getElementById("btn-refresh-runs");
+
+  const ACTIVE_STATUSES = new Set(["pending", "running", "paused", "stopping"]);
+  let timer = null;
+
+  function badgeFor(status) {
+    const map = {
+      completed: "badge-success",
+      running:   "badge-warning",
+      paused:    "badge-ghost",
+      pending:   "badge-info",
+      stopping:  "badge-ghost",
+      stopped:   "badge-ghost",
+      failed:    "badge-error",
+    };
+    const cls = map[status] || "badge-ghost";
+    return `<span class="badge ${cls} badge-xs">${status}</span>`;
+  }
+
+  function pnlCell(val) {
+    if (val === null || val === undefined || val === "") return "--";
+    const n = parseFloat(val) || 0;
+    const cls = n >= 0 ? "pnl-positive" : "pnl-negative";
+    const sign = n >= 0 ? "+" : "";
+    return `<span class="font-mono text-sm ${cls}">${sign}${n.toFixed(2)}</span>`;
+  }
+
+  function truncate(s, n) {
+    if (!s) return "";
+    return s.length > n ? s.slice(0, n) + "…" : s;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "--";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, {
+        month: "short", day: "2-digit",
+        hour: "2-digit", minute: "2-digit",
+      });
+    } catch { return iso; }
+  }
+
+  function progressCell(run) {
+    const total = run.total_bars || 0;
+    const done = run.processed_bars || 0;
+    if (ACTIVE_STATUSES.has(run.status)) {
+      const pct = total > 0 ? (done / total * 100) : 0;
+      return `
+        <div class="flex items-center gap-2 min-w-32">
+          <progress class="progress progress-primary w-20" value="${pct}" max="100"></progress>
+          <span class="text-xs opacity-60 font-mono">${pct.toFixed(1)}%</span>
+        </div>`;
+    }
+    if (run.status === "completed" || run.status === "stopped") {
+      return `<span class="text-xs opacity-60 font-mono">${done} bars</span>`;
+    }
+    return `<span class="text-xs opacity-30">--</span>`;
+  }
+
+  function render(runs) {
+    if (!runs.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="12" class="text-center py-12 opacity-40">
+          No backtest runs yet. <a href="{% url 'backtest' %}" class="link link-primary">Run one now</a>.
+        </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = runs.map(r => {
+      const summary = r.summary_json || {};
+      const metrics = r.metrics_json || {};
+      const symbols = Array.isArray(r.symbols) ? r.symbols.join(", ") : "";
+      const pnl = summary.total_pnl;
+      const ret = summary.returns_pct;
+      const trades = metrics.total_trades;
+      const winRate = metrics.win_rate;
+
+      return `
+        <tr data-run-id="${r.id}" data-status="${r.status}">
+          <td><a href="/backtest/results/${r.id}/" class="link link-hover font-mono">#${r.id}</a></td>
+          <td>${badgeFor(r.status)}</td>
+          <td class="text-xs max-w-48 truncate" title="${symbols}">${truncate(symbols, 40)}</td>
+          <td class="text-xs">${truncate(r.start_date, 10)} → ${truncate(r.end_date, 10)}</td>
+          <td class="text-xs font-mono">${r.resolution}</td>
+          <td>${progressCell(r)}</td>
+          <td class="font-mono">${trades ?? "--"}</td>
+          <td>${pnl !== undefined && pnl !== null ? pnlCell(pnl) : "--"}</td>
+          <td>${ret !== undefined && ret !== null ? `<span class="font-mono text-sm ${ret >= 0 ? 'pnl-positive' : 'pnl-negative'}">${ret}%</span>` : "--"}</td>
+          <td>${winRate !== undefined && winRate !== null ? `<span class="font-mono text-sm">${winRate}%</span>` : "--"}</td>
+          <td class="text-xs opacity-50">${fmtDate(r.created_at)}</td>
+          <td><a href="/backtest/results/${r.id}/" class="btn btn-ghost btn-xs">Details</a></td>
+        </tr>`;
+    }).join("");
+  }
+
+  async function refresh() {
+    try {
+      const resp = await fetch("/api/backtest/runs/");
+      if (!resp.ok) return;
+      const runs = await resp.json();
+      render(runs);
+
+      const hasActive = runs.some(r => ACTIVE_STATUSES.has(r.status));
+      updatedEl.textContent = `Updated ${new Date().toLocaleTimeString()}${hasActive ? " — live" : ""}`;
+      schedule(hasActive);
+    } catch (e) {
+      updatedEl.textContent = "Update failed";
+      schedule(false);
+    }
+  }
+
+  function schedule(active) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(refresh, active ? 2000 : 15000);
+  }
+
+  btnRefresh.addEventListener("click", refresh);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refresh();
+  });
+
+  refresh();
+})();
+</script>
+{% endblock %}

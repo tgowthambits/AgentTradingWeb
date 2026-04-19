@@ -1,0 +1,36 @@
+[project]
+name = "trading_system"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "arrow>=1.4.0",
+    "colorama>=0.4.6",
+    "delta-rest-client>=1.0.13",
+    "fastapi>=0.128.0",
+    "gym>=0.26.2",
+    "hmmlearn>=0.3.3",
+    "ipykernel>=7.1.0",
+    "logfire>=4.19.0",
+    "loguru>=0.7.3",
+    "numpy>=2.4.0",
+    "omegaconf>=2.3.0",
+    "pandas>=2.3.3",
+    "plotly>=6.5.1",
+    "pyside6>=6.10.1",
+    "pyyaml>=6.0.3",
+    "requests>=2.32.5",
+    "rich>=14.2.0",
+    "scikit-learn>=1.8.0",
+    "stable-baselines3>=2.7.1",
+    "tabulate>=0.9.0",
+    "uvicorn>=0.40.0",
+    "wsproto>=1.3.2",
+    "xgboost>=3.1.2",
+]
+
+[tool.uv.workspace]
+members = [
+    "web_platform",
+]

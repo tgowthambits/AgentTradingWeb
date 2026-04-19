@@ -1,0 +1,201 @@
+aggregation:
+  strategy: weighted
+  threshold:
+    min_indicators_buy: 3
+    min_indicators_sell: 3
+    min_agreement_percent: 55
+  conservative:
+    min_agreement: 0.75
+indicators:
+  rsi:
+    enabled: false
+    module: engine.indicators.rsi_indicator
+    class_name: RSIIndicator
+    weight: 1.0
+    params:
+      period: 14
+      oversold: 30
+      overbought: 70
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  ma_crossover:
+    enabled: false
+    module: engine.indicators.ma_crossover_indicator
+    class_name: MACrossoverIndicator
+    weight: 1.5
+    params:
+      fast_period: 50
+      slow_period: 200
+      ma_type: sma
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  macd:
+    enabled: false
+    module: engine.indicators.macd_indicator
+    class_name: MACDIndicator
+    weight: 1.2
+    params:
+      fast_period: 12
+      slow_period: 26
+      signal_period: 9
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  mystic_pulse:
+    enabled: false
+    module: engine.indicators.mystic_pulse_indicator
+    class_name: MysticPulseIndicator
+    weight: 1.0
+    params: {}
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  bollinger_bands:
+    enabled: false
+    module: engine.indicators.bollinger_indicator
+    class_name: BollingerBandsIndicator
+    weight: 1.0
+    params:
+      period: 20
+      std_dev: 2.0
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  super_regression:
+    enabled: false
+    module: engine.indicators.super_regression_indicator
+    class_name: SuperRegressionIndicator
+    weight: 1.0
+    params:
+      len: 20
+      mult: 2.0
+      source: close
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  statistical_mean_reversion:
+    enabled: true
+    module: engine.indicators.statistical_mean_reversion_indicator
+    class_name: StatisticalMeanReversionIndicator
+    weight: 1.5
+    params:
+      lookback_period: 20
+      z_score_threshold: 2.0
+      bollinger_period: 20
+      bollinger_std: 2.0
+      squeeze_threshold: 0.1
+      vwap_enabled: true
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  statistical_momentum:
+    enabled: true
+    module: engine.indicators.statistical_momentum_indicator
+    class_name: StatisticalMomentumIndicator
+    weight: 1.5
+    params:
+      roc_period: 10
+      velocity_period: 5
+      acceleration_period: 3
+      momentum_threshold: 0.02
+      divergence_lookback: 20
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  statistical_cointegration:
+    enabled: false
+    module: engine.indicators.statistical_cointegration_indicator
+    class_name: StatisticalCointegrationIndicator
+    weight: 1.2
+    params:
+      lookback_period: 60
+      z_score_threshold: 2.0
+      cointegration_window: 100
+      hedge_ratio_period: 60
+      min_cointegration_pvalue: 0.05
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  arbitrage_statistical:
+    enabled: true
+    module: engine.indicators.arbitrage_statistical_indicator
+    class_name: ArbitrageStatisticalIndicator
+    weight: 1.3
+    params:
+      lookback_period: 60
+      std_threshold: 2.0
+      confidence_level: 0.95
+      half_life_period: 20
+      min_spread_change: 0.01
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  hft_order_flow:
+    enabled: true
+    module: engine.indicators.hft_order_flow_indicator
+    class_name: HFTOrderFlowIndicator
+    weight: 1.5
+    params:
+      ofi_threshold: 0.3
+      lookback_period: 20
+      cumulative_delta_period: 20
+      volume_confirmation_multiplier: 1.5
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  hft_microstructure:
+    enabled: false
+    module: engine.indicators.hft_microstructure_indicator
+    class_name: HFTMicrostructureIndicator
+    weight: 1.2
+    params:
+      lookback_period: 20
+      liquidity_threshold: 0.2
+      price_impact_period: 10
+      reversal_threshold: 0.03
+      min_price_drop: 0.03
+      min_price_spike: 0.03
+      volume_confirmation: true
+      trend_confirmation: true
+    signals:
+      buy: true
+      sell: true
+      hold: true
+  hft_momentum_breakout:
+    enabled: true
+    module: engine.indicators.hft_momentum_breakout_indicator
+    class_name: HFTMomentumBreakoutIndicator
+    weight: 1.5
+    params:
+      volume_spike_multiplier: 2.0
+      lookback_period: 20
+      acceleration_period: 5
+      min_acceleration: 0.001
+      false_breakout_filter: true
+    signals:
+      buy: true
+      sell: true
+      hold: true
+signal_filtering:
+  min_indicators_required: 3
+  ignore_low_confidence: true
+  confidence_threshold: 0.7
+  override_on_unanimous: true
+advanced:
+  hot_reload: false
+  track_performance: true
+  auto_disable_poor_performers: false
+  performance_threshold: 0.4

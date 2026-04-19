@@ -1,0 +1,740 @@
+/* Trading System Dashboard Styles */
+
+:root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --border-color: #30363d;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --accent-blue: #58a6ff;
+    --accent-green: #3fb950;
+    --accent-red: #f85149;
+    --accent-yellow: #d29922;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary) !important;
+}
+
+/* Force light text on all elements */
+* {
+    color: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary) !important;
+}
+
+p, span, div {
+    color: inherit;
+}
+
+/* Custom Backgrounds */
+.bg-dark {
+    background-color: var(--bg-primary) !important;
+}
+
+.bg-gradient-dark {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.bg-gradient-dark * {
+    color: inherit;
+}
+
+.bg-gradient-dark h1,
+.bg-gradient-dark h2,
+.bg-gradient-dark h3,
+.bg-gradient-dark h4,
+.bg-gradient-dark h5,
+.bg-gradient-dark h6 {
+    color: var(--text-primary) !important;
+}
+
+.bg-gradient-dark .text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Cards */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 0.5rem;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Equal height cards in rows */
+.row .h-100 {
+    height: 100%;
+}
+
+.card-header {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    color: var(--text-primary) !important;
+}
+
+.card-header strong {
+    color: var(--text-primary) !important;
+}
+
+.card-header i {
+    color: var(--accent-blue) !important;
+}
+
+.card-header .badge {
+    color: #ffffff !important;
+}
+
+.card-body {
+    color: var(--text-primary) !important;
+}
+
+.card-body * {
+    color: inherit;
+}
+
+.card-body .card-title {
+    color: var(--text-primary) !important;
+}
+
+.card-body .card-subtitle {
+    color: var(--text-secondary) !important;
+}
+
+/* Override Bootstrap defaults for dark theme */
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+.text-light {
+    color: var(--text-primary) !important;
+}
+
+.text-white {
+    color: #ffffff !important;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    color: #ffffff !important;
+}
+
+/* Symbol Grid */
+.symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.symbol-card {
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.symbol-card:hover {
+    border-color: var(--accent-blue);
+    background: rgba(88, 166, 255, 0.1);
+    transform: scale(1.02);
+}
+
+.symbol-card.active {
+    border-color: var(--accent-blue);
+    background: rgba(88, 166, 255, 0.15);
+    box-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
+}
+
+.symbol-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+}
+
+.symbol-price {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--accent-blue);
+}
+
+.symbol-signal {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+.signal-buy {
+    background-color: rgba(63, 185, 80, 0.2);
+    color: var(--accent-green);
+    border: 1px solid var(--accent-green);
+}
+
+.signal-sell {
+    background-color: rgba(248, 81, 73, 0.2);
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+}
+
+.signal-hold {
+    background-color: rgba(210, 153, 34, 0.2);
+    color: var(--accent-yellow);
+    border: 1px solid var(--accent-yellow);
+}
+
+/* Tables */
+.positions-table {
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.positions-table th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.positions-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.positions-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Indicators List */
+.indicator-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.indicator-item:hover {
+    background: rgba(88, 166, 255, 0.1);
+    border-color: var(--accent-blue);
+}
+
+.indicator-name {
+    font-weight: 600;
+}
+
+.indicator-signal {
+    font-size: 1.2rem;
+}
+
+/* Event Log */
+#event-log {
+    font-family: 'Courier New', monospace;
+}
+
+.event-item {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.event-time {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.event-message {
+    color: var(--text-primary);
+}
+
+/* Status Indicators */
+.status-online {
+    background-color: var(--accent-green) !important;
+}
+
+.status-offline {
+    background-color: var(--text-secondary) !important;
+}
+
+.status-warning {
+    background-color: var(--accent-yellow) !important;
+}
+
+.status-error {
+    background-color: var(--accent-red) !important;
+}
+
+/* Chart Container */
+#chart-container {
+    background-color: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+/* Loading Animation */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Metrics Cards - Top Row KPIs */
+.card-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary) !important;
+}
+
+.card-subtitle {
+    color: var(--text-secondary) !important;
+}
+
+.card-body h3,
+.card-body h4,
+.card-body h5,
+.card-body h6 {
+    color: var(--text-primary) !important;
+}
+
+.card-body small,
+.card-body .text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Specific styling for metric display elements */
+#total-pnl,
+#win-rate,
+#total-trades,
+#bot-uptime {
+    color: var(--text-primary) !important;
+}
+
+#pnl-breakdown,
+#win-loss,
+#open-positions,
+#refresh-count {
+    color: var(--text-secondary) !important;
+}
+
+.positive-pnl {
+    color: var(--accent-green) !important;
+}
+
+.negative-pnl {
+    color: var(--accent-red) !important;
+}
+
+.neutral-pnl {
+    color: var(--text-primary) !important;
+}
+
+/* Container spacing */
+.container-fluid {
+    max-width: 1920px;
+    margin: 0 auto;
+}
+
+.row {
+    margin-bottom: 0;
+}
+
+.row.mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .symbol-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .card-title {
+        font-size: 1.5rem;
+    }
+    
+    .container-fluid {
+        padding: 0.5rem;
+    }
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Signal Details */
+.signal-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.signal-detail-item {
+    background: var(--bg-tertiary);
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.signal-detail-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.signal-detail-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Icons */
+.bi {
+    vertical-align: middle;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Price update flash effect */
+@keyframes priceFlash {
+    0%, 100% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(88, 166, 255, 0.3);
+    }
+}
+
+.price-update {
+    animation: priceFlash 0.5s ease-in-out;
+    font-weight: bold;
+}
+
+/* Metrics Table */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.metrics-section {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+    transition: all 0.2s;
+}
+
+.metrics-section:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 2px 8px rgba(88, 166, 255, 0.2);
+}
+
+.metrics-section-title {
+    color: var(--accent-blue);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.metrics-table-inner {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.metrics-table-inner tr {
+    transition: background-color 0.2s;
+}
+
+.metrics-table-inner tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.metric-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    font-weight: 500;
+}
+
+.metric-value {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 500;
+}
+
+.metric-value strong {
+    font-weight: 700;
+}
+
+/* Responsive metrics grid */
+@media (min-width: 768px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 767px) {
+    .metrics-table-inner {
+        font-size: 0.85rem;
+    }
+    
+    .metric-label,
+    .metric-value {
+        padding: 0.4rem;
+    }
+}
+
+/* Comprehensive Symbols Table */
+#comprehensive-symbols-table {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    padding: 0.5rem;
+}
+
+.comprehensive-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9rem;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.comprehensive-table thead th {
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+    font-weight: 600;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    border-bottom: 2px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+.comprehensive-table thead th:last-child {
+    border-right: none;
+}
+
+.comprehensive-table tbody td {
+    padding: 0.6rem 0.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.comprehensive-table tbody td:last-child {
+    border-right: none;
+}
+
+.comprehensive-table tbody tr.symbol-row {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.comprehensive-table tbody tr.symbol-row:hover {
+    background-color: rgba(88, 166, 255, 0.1);
+    transform: scale(1.01);
+}
+
+.comprehensive-table tbody tr.total-row {
+    background: var(--bg-secondary);
+    font-weight: bold;
+    border-top: 2px solid var(--accent-blue);
+}
+
+.comprehensive-table tbody tr.total-row td {
+    padding: 0.75rem 0.5rem;
+}
+
+/* Sticky first column */
+.comprehensive-table .sticky-col {
+    position: sticky;
+    left: 0;
+    background: var(--bg-tertiary);
+    z-index: 5;
+    border-right: 2px solid var(--border-color) !important;
+    min-width: 200px;
+    max-width: none;
+}
+
+.comprehensive-table thead .sticky-col {
+    background: var(--bg-secondary);
+    z-index: 15;
+}
+
+.comprehensive-table .symbol-row:hover .sticky-col {
+    background: rgba(88, 166, 255, 0.15);
+}
+
+.comprehensive-table .total-row .sticky-col {
+    background: var(--bg-secondary);
+}
+
+/* Column specific styling */
+.symbol-name-col {
+    text-align: left !important;
+    min-width: 200px;
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+}
+
+.price-col {
+    font-weight: 600;
+    color: var(--accent-blue);
+    min-width: 70px;
+}
+
+.indicator-col {
+    padding: 0.4rem !important;
+    min-width: 40px;
+}
+
+/* Signal Icons */
+.signal-icon {
+    display: inline-block;
+    font-size: 1.2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.signal-icon-buy {
+    color: var(--accent-green);
+}
+
+.signal-icon-sell {
+    color: var(--accent-red);
+}
+
+.signal-icon-hold {
+    color: var(--accent-yellow);
+}
+
+/* Responsive table */
+@media (max-width: 1200px) {
+    .comprehensive-table {
+        font-size: 0.85rem;
+    }
+    
+    .comprehensive-table thead th,
+    .comprehensive-table tbody td {
+        padding: 0.5rem 0.4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .comprehensive-table {
+        font-size: 0.8rem;
+    }
+    
+    .comprehensive-table thead th,
+    .comprehensive-table tbody td {
+        padding: 0.4rem 0.3rem;
+    }
+    
+    .symbol-name-col {
+        min-width: 150px;
+        max-width: none;
+    }
+}
+
+/* Highlight animation for updates */
+@keyframes rowUpdate {
+    0% {
+        background-color: rgba(88, 166, 255, 0.3);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.row-updated {
+    animation: rowUpdate 0.5s ease-out;
+}
+
