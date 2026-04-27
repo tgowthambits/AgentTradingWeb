@@ -47,6 +47,7 @@ uv run manage.py runserver
 ```bash
 # Windows
 uv run celery -A web_platform worker --loglevel=info --pool=gevent
+uv run celery -A web_platform worker --loglevel=info --pool=eventlet
 
 # Linux/macOS
 celery -A web_platform worker --loglevel=info
@@ -55,7 +56,7 @@ celery -A web_platform worker --loglevel=info
 Redis must already be up. That's it — start a backtest in the UI and you'll
 see progress stream live from the worker into the browser.
 
-## Task control
+## Task control4
 
 REST endpoints (all accept POST):
 
