@@ -1,8 +1,6 @@
 symbols:
-- BSE:SENSEX2642378000PE
-- BSE:SENSEX2642379400CE
-# - NSE:NIFTY2642124350PE
-# - NSE:NIFTY2642124350CE
+- BSE:SENSEX26APR77300PE
+- BSE:SENSEX26APR77300CE
 lot_sizes:
   NSE:NIFTY2642124350PE: 20
   NSE:NIFTY2642124350CE: 20
@@ -13,12 +11,12 @@ lot_sizes:
   NSE:BANKNIFTY26JAN59600PE: 30
   NSE:BANKNIFTY26JAN59600CE: 30
   default: 35
-
+  BSE:SENSEX26APR77300PE: 20
+  BSE:SENSEX26APR77300CE: 20
 date_range:
   start_date: '2026-04-17 09:15:00'
   end_date: '2026-04-18 16:15:00'
   resolution: 5S
-
 backtest:
   enabled: true
   start_date: '2026-04-17'
@@ -28,10 +26,9 @@ backtest:
   resolution: 5S
   entry_slippage: 0.05
   exit_slippage: 0.05
-
 resolution: 5S
 aggregation_strategy: weighted
-min_agreement: 0.70
+min_agreement: 0.7
 indicators:
   rsi:
     enabled: false
@@ -62,7 +59,7 @@ indicators:
   super_regression:
     enabled: false
     weight: 1.0
-    len: 20 
+    len: 20
     mult: 2.0
     source: low
   statistical_mean_reversion:
@@ -152,7 +149,6 @@ output:
     enabled: true
     show_entry_high: true
     show_exit_low: true
-
 broker:
   enabled: true
   type: paper

@@ -21,7 +21,8 @@
 
           <fieldset class="fieldset">
             <legend class="fieldset-legend text-xs">Symbols</legend>
-            <textarea id="bt-symbols" class="textarea textarea-sm w-full" rows="3" placeholder="One symbol per line">{% for s in symbols %}{{ s }}
+            {% include "partials/option_chain_modal.html" with textarea_id="bt-symbols" %}
+            <textarea id="bt-symbols" class="textarea textarea-sm w-full mt-2" rows="3" placeholder="Put symbol first, then call (one per line), or use Option chain">{% for s in symbols %}{{ s }}
 {% endfor %}</textarea>
           </fieldset>
 
@@ -213,4 +214,5 @@
 
 {% block extra_scripts %}
 <script src="{% static 'js/backtest.js' %}"></script>
+<script src="{% static 'js/option_chain_modal.js' %}"></script>
 {% endblock %}

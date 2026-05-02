@@ -1,8 +1,6 @@
 symbols:
 - BSE:SENSEX26APR77300PE
 - BSE:SENSEX26APR77300CE
-# - NSE:NIFTY26APR23900PE
-# - NSE:NIFTY26APR24300CE
 lot_sizes:
   NSE:NIFTY26APR23900PE: 20
   NSE:NIFTY26APR24300CE: 20
@@ -19,7 +17,7 @@ date_range:
   resolution: 5S
 resolution: 5S
 aggregation_strategy: weighted
-min_agreement: 0.70
+min_agreement: 0.7
 indicators:
   rsi:
     enabled: false
@@ -50,7 +48,7 @@ indicators:
   super_regression:
     enabled: false
     weight: 1.0
-    len: 20 
+    len: 20
     mult: 2.0
     source: low
   statistical_mean_reversion:

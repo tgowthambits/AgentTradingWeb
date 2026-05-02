@@ -1,3 +1,4 @@
+import re
 import yaml
 from pathlib import Path
 from typing import List, Optional
@@ -116,6 +117,66 @@ class IndicatorOut(Schema):
 
 class MessageOut(Schema):
     message: str
+
+
+class TradingSymbolsApplyIn(Schema):
+    put_symbol: str
+    call_symbol: str
+    lot_put: int = 20
+    lot_call: int = 20
+
+
+_FYERS_SYM_RE = re.compile(r"^[A-Z0-9][A-Z0-9:_\-]{4,120}$")
+
+
+def _validate_option_leg(symbol: str, leg: str) -> Optional[str]:
+    s = (symbol or "").strip()
+    if not _FYERS_SYM_RE.match(s):
+        return f"Invalid {leg} symbol format"
+    if leg == "put" and not s.endswith("PE"):
+        return "Put symbol must end with PE"
+    if leg == "call" and not s.endswith("CE"):
+        return "Call symbol must end with CE"
+    return None
+
+
+def _trading_yaml_write_targets() -> List[Path]:
+    """Paths to update with selected symbols (platform YAML + repo trading_system if present)."""
+    paths: List[Path] = [settings.TRADING_CONFIG_PATH]
+    repo = settings.BASE_DIR.parent
+    alt = repo / "trading_system" / "config" / "trading_config.yaml"
+    if alt.is_file() and alt.resolve() != settings.TRADING_CONFIG_PATH.resolve():
+        paths.append(alt)
+    return paths
+
+
+def _write_symbols_to_trading_yaml(
+    path: Path,
+    put: str,
+    call: str,
+    lot_put: int,
+    lot_call: int,
+) -> None:
+    if not path.exists():
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    data["symbols"] = [put, call]
+    lot_sizes = data.get("lot_sizes")
+    if not isinstance(lot_sizes, dict):
+        lot_sizes = {}
+    lot_sizes[put] = int(lot_put)
+    lot_sizes[call] = int(lot_call)
+    data["lot_sizes"] = lot_sizes
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.dump(
+            data,
+            f,
+            default_flow_style=False,
+            sort_keys=False,
+            allow_unicode=True,
+            width=120,
+        )
 
 
 # ─── Config Endpoints ──────────────────────────────────────
@@ -255,6 +316,85 @@ def delete_data_file(request, filename: str):
         target.unlink()
         return {"message": f"Deleted {filename}"}
     return api.create_response(request, {"message": "File not found"}, status=404)
+
+
+# ─── Fyers options chain + trading YAML symbols ─────────────
+
+def _fyers_client():
+    try:
+        from engine.data.fyers_provider import FyersData, is_available, normalize_options_chain
+
+        if not is_available():
+            return None, None
+        return FyersData(), normalize_options_chain
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+@api.get("/fyers/options-chain/")
+def fyers_options_chain(
+    request,
+    symbol: str,
+    timestamp: Optional[str] = None,
+    strikecount: Optional[int] = None,
+):
+    """
+    Proxy Fyers ``/indus/data/v1/options-chain`` using engine ``FyersData`` auth.
+    Returns normalized ``strikes`` rows for the option-chain UI.
+    """
+    client, normalize_fn = _fyers_client()
+    if client is None or normalize_fn is None:
+        return api.create_response(
+            request,
+            {"ok": False, "error": "Fyers is not configured (engine/config/fyers_config.yaml)."},
+            status=503,
+        )
+    ts = (timestamp or "").strip() or None
+    try:
+        raw = client.fetch_options_chain_raw(symbol, timestamp=ts, strikecount=strikecount)
+    except Exception as exc:  # noqa: BLE001
+        return api.create_response(
+            request,
+            {"ok": False, "error": str(exc)},
+            status=502,
+        )
+    normalized = normalize_fn(raw)
+    normalized["raw_code"] = raw.get("code")
+    return normalized
+
+
+@api.post("/trading-config/symbols/", response=dict)
+def persist_trading_symbols(request, payload: TradingSymbolsApplyIn):
+    """Write selected put/call symbols into trading YAML (platform + ``trading_system`` when present)."""
+    err = _validate_option_leg(payload.put_symbol, "put")
+    if err:
+        return api.create_response(request, {"ok": False, "error": err}, status=400)
+    err = _validate_option_leg(payload.call_symbol, "call")
+    if err:
+        return api.create_response(request, {"ok": False, "error": err}, status=400)
+
+    targets = [p for p in _trading_yaml_write_targets() if p.exists()]
+    if not targets:
+        return api.create_response(
+            request,
+            {"ok": False, "error": f"Trading config not found: {settings.TRADING_CONFIG_PATH}"},
+            status=404,
+        )
+
+    put = payload.put_symbol.strip()
+    call = payload.call_symbol.strip()
+    lot_put = int(payload.lot_put)
+    lot_call = int(payload.lot_call)
+    written: List[str] = []
+    for path in targets:
+        _write_symbols_to_trading_yaml(path, put, call, lot_put, lot_call)
+        written.append(str(path))
+
+    return {
+        "ok": True,
+        "symbols": [put, call],
+        "paths": written,
+    }
 
 
 # ─── Backtest Endpoints ────────────────────────────────────

@@ -13,6 +13,7 @@ import pandas as pd
 logger = logging.getLogger("engine.data.fyers")
 
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "fyers_config.yaml"
+OPTIONS_CHAIN_URL = "https://api-t1.fyers.in/indus/data/v1/options-chain"
 
 try:
     import arrow
@@ -104,3 +105,123 @@ class FyersDataFetcher:
 
         logger.info("Fetched %d candles for %s", len(df), symbol)
         return df
+
+    def fetch_options_chain_raw(
+        self,
+        symbol: str,
+        *,
+        timestamp: str | None = None,
+        strikecount: int | None = None,
+    ) -> dict:
+        """
+        Call Fyers options-chain API (same auth as history).
+
+        Args:
+            symbol: Underlying, e.g. ``BSE:SENSEX-INDEX``.
+            timestamp: Optional expiry epoch string (from ``expiryData[].expiry``).
+            strikecount: Optional strike window size around ATM.
+
+        Returns:
+            Parsed JSON dict (includes ``code``, ``data``, ``message``).
+        """
+        params: dict = {"symbol": symbol}
+        if timestamp:
+            params["timestamp"] = str(timestamp)
+        if strikecount is not None:
+            params["strikecount"] = int(strikecount)
+
+        resp = requests.get(
+            OPTIONS_CHAIN_URL,
+            params=params,
+            headers=self.headers,
+            verify=False,
+            timeout=45,
+        )
+        try:
+            return resp.json()
+        except Exception as exc:  # noqa: BLE001
+            logger.error("options-chain non-JSON: %s", resp.text[:300])
+            raise ValueError(f"Invalid JSON from options-chain: {exc}") from exc
+
+
+def normalize_options_chain(api_json: dict) -> dict:
+    """
+    Turn Fyers options-chain JSON into a compact structure for the web UI.
+
+    Returns ``{ok, error?, underlying, indiavix, expiryData, strikes, spot, atm_strike}``.
+    """
+    if not api_json:
+        return {"ok": False, "error": "empty response"}
+    if api_json.get("code") != 200:
+        return {
+            "ok": False,
+            "error": api_json.get("message") or str(api_json.get("code")),
+        }
+
+    data = api_json.get("data") or {}
+    chain = data.get("optionsChain") or []
+    underlying = None
+    by_strike: dict[int, dict] = {}
+
+    for row in chain:
+        sp = row.get("strike_price")
+        ot = (row.get("option_type") or "").strip()
+        if sp is None or sp < 0 or not ot:
+            underlying = row
+            continue
+        strike = int(sp)
+        if strike not in by_strike:
+            by_strike[strike] = {"strike": strike, "ce": None, "pe": None}
+        side = "ce" if ot == "CE" else "pe"
+        by_strike[strike][side] = {
+            "symbol": row.get("symbol"),
+            "ltp": row.get("ltp"),
+            "ltpch": row.get("ltpch"),
+            "ltpchp": row.get("ltpchp"),
+            "oi": row.get("oi"),
+            "volume": row.get("volume"),
+            "bid": row.get("bid"),
+            "ask": row.get("ask"),
+        }
+
+    spot = 0.0
+    if underlying and underlying.get("ltp") is not None:
+        try:
+            spot = float(underlying["ltp"])
+        except (TypeError, ValueError):
+            spot = 0.0
+
+    strikes_sorted = sorted(by_strike.keys())
+    atm_strike = None
+    if strikes_sorted and spot > 0:
+        atm_strike = min(strikes_sorted, key=lambda s: abs(s - spot))
+
+    rows = []
+    for k in strikes_sorted:
+        entry = by_strike[k]
+        rows.append(
+            {
+                "strike": k,
+                "atm": k == atm_strike,
+                "ce": entry["ce"],
+                "pe": entry["pe"],
+            }
+        )
+
+    return {
+        "ok": True,
+        "underlying": underlying,
+        "indiavix": data.get("indiavixData"),
+        "expiryData": data.get("expiryData"),
+        "callOi": data.get("callOi"),
+        "putOi": data.get("putOi"),
+        "strikes": rows,
+        "spot": spot,
+        "atm_strike": atm_strike,
+    }
+
+
+class FyersData(FyersDataFetcher):
+    """Fyers market data: historical candles (``fetch``) and options chain (``fetch_options_chain_raw``)."""
+
+    pass

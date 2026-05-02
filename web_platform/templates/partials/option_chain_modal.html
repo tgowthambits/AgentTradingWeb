@@ -1,0 +1,85 @@
+{# Expects: textarea_id — target textarea for Apply / Save #}
+<div class="flex flex-wrap items-center justify-between gap-2 gap-y-2">
+  <p class="text-xs opacity-60 max-w-[14rem] sm:max-w-none m-0">
+    Fyers option chain: pick one put and one call, or edit the list below.
+  </p>
+  <button type="button"
+          class="btn btn-outline btn-sm shrink-0 js-open-option-chain"
+          data-textarea-id="{{ textarea_id }}">
+    Option chain
+  </button>
+</div>
+
+<dialog id="dlg-option-chain" class="modal">
+  <div class="modal-box max-w-6xl w-[min(96vw,72rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+    <div class="flex items-center justify-between gap-2 px-4 py-3 border-b border-base-300 shrink-0">
+      <div class="font-medium text-sm">Option chain</div>
+      <button type="button" class="btn btn-ghost btn-sm btn-square oc-close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="px-4 py-2 border-b border-base-300 flex flex-wrap gap-2 items-center shrink-0 bg-base-200/50">
+      <div class="join join-horizontal flex-wrap" id="oc-index-tabs" role="tablist"></div>
+      <select id="oc-expiry" class="select select-bordered select-xs min-w-[12rem] max-w-[18rem]"></select>
+      <label class="label cursor-pointer gap-2 py-0">
+        <span class="label-text text-xs opacity-70">Strikes</span>
+        <input type="number" id="oc-strikecount" class="input input-bordered input-xs w-16" min="5" max="60" value="" placeholder="all" title="Optional strikecount for API" />
+      </label>
+      <button type="button" id="oc-reload" class="btn btn-ghost btn-xs">Reload</button>
+    </div>
+
+    <div id="oc-summary" class="px-4 py-2 text-xs font-mono border-b border-base-300 shrink-0 bg-base-300/30 flex flex-wrap gap-x-4 gap-y-1"></div>
+
+    <div id="oc-error" class="hidden mx-4 mt-2 text-xs text-error"></div>
+
+    <div class="flex-1 min-h-0 overflow-auto px-2 pb-2">
+      <table class="table table-xs w-full oc-table">
+        <thead>
+          <tr class="bg-base-200 text-[10px] uppercase opacity-60">
+            <th colspan="3" class="text-right">Call</th>
+            <th class="text-center bg-base-300/40">Strike</th>
+            <th colspan="3" class="text-right">Put</th>
+          </tr>
+          <tr class="bg-base-200">
+            <th class="text-right">OI</th>
+            <th class="text-right">Vol</th>
+            <th class="text-right">LTP</th>
+            <th class="text-center bg-base-300/40"> </th>
+            <th class="text-right">LTP</th>
+            <th class="text-right">Vol</th>
+            <th class="text-right">OI</th>
+          </tr>
+        </thead>
+        <tbody id="oc-body"></tbody>
+      </table>
+    </div>
+
+    <div class="px-4 py-3 border-t border-base-300 flex flex-wrap items-center gap-3 shrink-0 bg-base-200/40">
+      <div id="oc-selection" class="text-xs font-mono flex-1 min-w-[12rem] opacity-80"></div>
+      <div class="flex items-center gap-2 text-xs">
+        <label class="flex items-center gap-1 opacity-70">Lot PE
+          <input type="number" id="oc-lot-pe" class="input input-bordered input-xs w-14" value="20" min="1" />
+        </label>
+        <label class="flex items-center gap-1 opacity-70">Lot CE
+          <input type="number" id="oc-lot-ce" class="input input-bordered input-xs w-14" value="20" min="1" />
+        </label>
+      </div>
+      <button type="button" id="oc-apply" class="btn btn-primary btn-sm">Apply to symbols</button>
+      <button type="button" id="oc-save-yaml" class="btn btn-outline btn-sm">Save to YAML</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+<style>
+  .oc-bar { height: 4px; border-radius: 2px; max-width: 100%; }
+  .oc-bar-ce { background: oklch(0.55 0.14 15 / 0.55); }
+  .oc-bar-pe { background: oklch(0.55 0.12 145 / 0.5); }
+  .oc-cell-sel-ce { outline: 2px solid oklch(0.65 0.14 15); outline-offset: -2px; }
+  .oc-cell-sel-pe { outline: 2px solid oklch(0.62 0.12 145); outline-offset: -2px; }
+  .oc-row-atm td { background: oklch(0.35 0.06 290 / 0.35); }
+  .oc-itm-ce { background: oklch(0.4 0.04 95 / 0.12); }
+  .oc-itm-pe { background: oklch(0.4 0.04 95 / 0.12); }
+  .oc-num { font-variant-numeric: tabular-nums; }
+</style>
